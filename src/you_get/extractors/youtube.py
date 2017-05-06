@@ -259,6 +259,8 @@ class YouTube(VideoExtractor):
 
         # Prepare DASH streams
         try:
+            if ytplayer_config['args'].get('dashmpd') is None:
+                return
             dashmpd = ytplayer_config['args']['dashmpd']
             dash_xml = parseString(get_content(dashmpd))
             for aset in dash_xml.getElementsByTagName('AdaptationSet'):
