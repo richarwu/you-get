@@ -74,7 +74,6 @@ def video_info(vid,**kwargs):
             stream_id = '720p'
         else:
             stream_id =sorted(support_stream_id,key= lambda i: int(i[1:]))[-1]
-
     url =info["playurl"]["domain"][0]+info["playurl"]["dispatch"][stream_id][0]
     uuid = hashlib.sha1(url.encode('utf8')).hexdigest() + '_0'
     ext = info["playurl"]["dispatch"][stream_id][1].split('.')[-1]
@@ -92,13 +91,20 @@ def video_info(vid,**kwargs):
     urls = re.findall(r'^[^#][^\r]*',m3u8_list,re.MULTILINE)
     return ext,urls
 
+def build_url(segs_list):
+    name_patt = r'ver_\d+_\d+_\d+_(\d+)_(\d+)_\d+_\d+_\d+\.ts'
+    hit = re.search(name_patt, segs_list[-1])
+    seg = int(hit.group(1)) + int(hit.group(2))
+
+    first_fn = re.search(name_patt, segs_list[0]).group(0).split('_')
+    first_fn[5] = str(seg)
+    fn = '_'.join(first_fn)
+    return re.sub(name_patt, fn, segs_list[0])
+
 def letv_download_by_vid(vid,title, output_dir='.', merge=True, info_only=False,**kwargs):
     ext , urls = video_info(vid,**kwargs)
-    size = 0
-    for i in urls:
-        _, _, tmp = url_info(i)
-        size += tmp
-
+    url = build_url(urls)
+    _, _, size = url_info(url)
     print_info(site_info, title, ext, size)
     if not info_only:
         download_urls(urls, title, ext, size, output_dir=output_dir, merge=merge)
