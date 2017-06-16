@@ -90,6 +90,58 @@ def getVMS(tvid, vid):
     vmsreq= url = 'http://cache.m.iqiyi.com/tmts/{0}/{1}/?t={2}&sc={3}&src={4}'.format(tvid,vid,t,sc,src)
     return json.loads(get_content(vmsreq))
 
+def parse_iqiyi_m3u8_seg_url(url):
+    start = re.search(r'&start=(\d+)', url).group(1)
+    end = re.search(r'&end=(\d+)', url).group(1)
+    size = re.search(r'&contentlength=(\d+)', url).group(1)
+    return start, end, size
+
+def parse_iqiyi_m3u8_seg(seg_urls):
+    url_data = []
+    for url in seg_urls:
+        start, end, size = parse_iqiyi_m3u8_seg_url(url)
+        url_data.append((start, end, size, url))
+
+def iqiyi_m3u8_helper(m3u8):
+    '''m3u8 should be iterable and every yield return one line, a file object returned by open or page content splited with line ending'''
+    segs_url = []
+    ends = []
+    lens = []
+
+    for line in m3u8:
+        if line.startswith('http'):
+            start = int(re.search(r'&start=(\d+)', line).group(1))
+            if start == 0:
+                segs_url.append([])
+                ends.append(0)
+                lens.append(0)
+            end = int(re.search(r'&end=(\d+)', line).group(1))
+            size = int(re.search(r'&contentlength=(\d+)', line).group(1))
+            if end > ends[-1]:
+                ends[-1] = end
+            lens[-1] += size
+            segs_url[-1].append(line.strip())
+#&start=0 is the mark of new segments, not #EXT-X-DISCONTINUITY
+        #elif line.startswith('#EXT-X-DISCONTINUITY'):
+            #segs_url.append([])
+            #ends.append(0)
+            #lens.append(0)
+        elif line.startswith('#EXT-X-ENDLIST'):
+            break
+    for i in range(len(ends)):
+        if ends[i] != lens[i]:
+#for weird m3u8 just return all the urls
+            return [item for sublist in segs_url for item in sublist], sum(lens)
+
+#reconstruct urls...
+    res_list = []
+    for pos, urls in enumerate(segs_url):
+        url = urls[0]
+        url = re.sub(r'end=\d+', 'end='+str(ends[pos]), url, 1)
+        url = re.sub(r'contentlength=\d+', 'contentlength='+str(lens[pos]), url, 1)
+        res_list.append(url)
+    return res_list, sum(lens) 
+
 class Iqiyi(VideoExtractor):
     name = "爱奇艺 (Iqiyi)"
 
@@ -134,7 +186,12 @@ class Iqiyi(VideoExtractor):
                       r1(r'vid=([^&]+)', self.url) or \
                       r1(r'data-player-videoid="([^"]+)"', html)
             self.vid = (tvid, videoid)
-            self.title = match1(html, '<title>([^<]+)').split('-')[0]
+            info_u = 'http://mixer.video.iqiyi.com/jp/mixin/videos/' + tvid
+            mixin = get_content(info_u)
+            mixin_json = json.loads(mixin[len('var tvInfoJs='):])
+            real_u = mixin_json['url']
+            real_html = get_content(real_u)
+            self.title = match1(real_html, '<title>([^<]+)').split('-')[0]
         tvid, videoid = self.vid
         info = getVMS(tvid, videoid)
         assert info['code'] == 'A00000', 'can\'t play this video'
@@ -199,9 +256,15 @@ class Iqiyi(VideoExtractor):
             # For legacy main()
             
             #Here's the change!!
-            download_url_ffmpeg(urls[0], self.title, 'mp4',
-                          output_dir=kwargs['output_dir'],
-                          merge=kwargs['merge'],)
+            try:
+                m3u_list = get_content(urls[0]).split('\n')
+                urls, file_size = iqiyi_m3u8_helper(m3u_list)
+            except Exception as e:
+                download_url_ffmpeg(urls[0], self.title, 'mp4',
+                              output_dir=kwargs['output_dir'],
+                              merge=kwargs['merge'],)
+            else:
+                download_urls(urls, self.title, 'mp4', file_size, output_dir=kwargs['output_dir'], merge=kwargs['merge'])
 
             if not kwargs['caption']:
                 print('Skipping captions.')

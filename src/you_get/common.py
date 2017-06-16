@@ -75,6 +75,7 @@ SITES = {
     'tumblr'           : 'tumblr',
     'twimg'            : 'twitter',
     'twitter'          : 'twitter',
+    'ucas'             : 'ucas',
     'videomega'        : 'videomega',
     'vidto'            : 'vidto',
     'vimeo'            : 'vimeo',
@@ -137,6 +138,29 @@ if sys.stdout.isatty():
 else:
     default_encoding = locale.getpreferredencoding().lower()
 
+def rc4(key, data):
+#all encryption algo should work on bytes
+    assert type(key)==type(data) and type(key) == type(b'')
+    state = list(range(256))
+    j = 0
+    for i in range(256):
+        j += state[i] + key[i % len(key)]
+        j &= 0xff
+        state[i], state[j] = state[j], state[i]
+
+    i = 0
+    j = 0
+    out_list = []
+    for char in data:
+        i += 1
+        i &= 0xff
+        j += state[i]
+        j &= 0xff
+        state[i], state[j] = state[j], state[i]
+        prn = state[(state[i] + state[j]) & 0xff]
+        out_list.append(char ^ prn)
+
+    return bytes(out_list)
 def maybe_print(*s):
     try: print(*s)
     except: pass
@@ -1067,6 +1091,8 @@ def print_info(site_info, title, type, size):
         type_info = "Portable Network Graphics (%s)" % type
     elif type in ['image/gif']:
         type_info = "Graphics Interchange Format (%s)" % type
+    elif type in ['m3u8']:
+        type_info = 'M3U8 Playlist {}'.format(type)
 
     else:
         type_info = "Unknown type (%s)" % type
@@ -1074,7 +1100,8 @@ def print_info(site_info, title, type, size):
     maybe_print("Site:      ", site_info)
     maybe_print("Title:     ", unescape_html(tr(title)))
     print("Type:      ", type_info)
-    print("Size:      ", round(size / 1048576, 2), "MiB (" + str(size) + " Bytes)")
+    if type != 'm3u8':
+        print("Size:      ", round(size / 1048576, 2), "MiB (" + str(size) + " Bytes)")
     print()
 
 def mime_to_container(mime):
@@ -1412,7 +1439,7 @@ def url_to_module(url):
         video_host = r1(r'https?://([^/]+)/', url)
         video_url = r1(r'https?://[^/]+(.*)', url)
 
-    if video_host.endswith('.com.cn'):
+    if video_host.endswith('.com.cn') or video_host.endswith('.ac.cn'):
         video_host = video_host[:-3]
     domain = r1(r'(\.[^.]+\.[^.]+)$', video_host) or video_host
     assert domain, 'unsupported url: ' + url
