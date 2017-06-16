@@ -545,7 +545,9 @@ def url_save(url, filepath, bar, refer = None, is_part = False, faker = False, h
             headers = headers
         else:
             headers = {}
-        headers['Range'] = 'bytes=' + str(received) + '-'
+#sohu's broken CDN forbids range: bytes=x-
+        if received:
+            headers['Range'] = 'bytes=' + str(received) + '-'
         if refer:
             headers['Referer'] = refer
 
