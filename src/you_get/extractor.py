@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .common import match1, maybe_print, download_urls, get_filename, parse_host, set_proxy, unset_proxy
+from .common import match1, maybe_print, download_urls, get_filename, parse_host, set_proxy, unset_proxy, get_content
 from .common import print_more_compatible as print
 from .util import log
 from . import json_output
@@ -162,6 +162,21 @@ class VideoExtractor():
         print("playlist:            %s" % self.title)
         print("videos:")
 
+    def handle_m3u8(self, m3u8_url):
+        m3u8_list = get_content(m3u8_url).split('\n')
+        path_len = len(m3u8_url.split('/')[-1])
+        base_url = m3u8_url[:-path_len]
+
+        urls = []
+        for line in m3u8_list:
+            line = line.strip()
+            if len(line) > 0 and line[0] != '#':
+                if line.startswith('http'):
+                    urls.append(line)
+                else:
+                    url.append(base_url+line)
+        return urls
+
     def download(self, **kwargs):
         if 'json_output' in kwargs and kwargs['json_output']:
             json_output.output(self)
@@ -195,6 +210,7 @@ class VideoExtractor():
                 self.p_i(stream_id)
 
             if stream_id in self.streams:
+                m3u8_url = self.streams[stream_id].get('m3u8_url')
                 urls = self.streams[stream_id]['src']
                 ext = self.streams[stream_id]['container']
                 total_size = self.streams[stream_id]['size']
@@ -203,6 +219,9 @@ class VideoExtractor():
                 ext = self.dash_streams[stream_id]['container']
                 total_size = self.dash_streams[stream_id]['size']
 
+            if not urls:
+                if m3u8_url:
+                    urls = self.handle_m3u8(m3u8_url)
             if not urls:
                 log.wtf('[Failed] Cannot extract video source.')
             # For legacy main()
