@@ -262,7 +262,7 @@ class Iqiyi(VideoExtractor):
             except Exception as e:
                 download_url_ffmpeg(urls[0], self.title, 'mp4',
                               output_dir=kwargs['output_dir'],
-                              merge=kwargs['merge'],)
+                              merge=kwargs['merge'], stream=False)
             else:
                 download_urls(urls, self.title, 'mp4', file_size, output_dir=kwargs['output_dir'], merge=kwargs['merge'])
 
