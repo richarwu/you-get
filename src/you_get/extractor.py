@@ -175,7 +175,7 @@ class VideoExtractor():
                     urls.append(line)
                 else:
                     url.append(base_url+line)
-        return urls
+        return urls, 0
 
     def download(self, **kwargs):
         if 'json_output' in kwargs and kwargs['json_output']:
@@ -221,7 +221,8 @@ class VideoExtractor():
 
             if not urls:
                 if m3u8_url:
-                    urls = self.handle_m3u8(m3u8_url)
+                    urls, total_size = self.handle_m3u8(m3u8_url)
+                    ext = 'ts'
             if not urls:
                 log.wtf('[Failed] Cannot extract video source.')
             # For legacy main()

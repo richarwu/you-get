@@ -165,7 +165,9 @@ class Iqiyi(VideoExtractor):
     vd_2_id = {10: '4k', 19: '4k', 5:'BD', 18: 'BD', 21: 'HD_H265', 2: 'HD', 4: 'TD', 17: 'TD_H265', 96: 'LD', 1: 'SD', 14: 'TD'}
     id_2_profile = {'4k':'4k', 'BD': '1080p','TD': '720p', 'HD': '540p', 'SD': '360p', 'LD': '210p', 'HD_H265': '540p H265', 'TD_H265': '720p H265'}
 
-
+    def handle_m3u8(self, m3u8_url):
+        m3u8_list = get_content(m3u8_url).split('\n')
+        return iqiyi_m3u8_helper(m3u8_list)
 
     def download_playlist_by_url(self, url, **kwargs):
         self.url = url
@@ -204,10 +206,11 @@ class Iqiyi(VideoExtractor):
                 if stream_id in self.stream_types:
                     continue
                 stream_profile = self.id_2_profile[stream_id]
-                self.streams[stream_id] = {'video_profile': stream_profile, 'container': 'm3u8', 'src': [stream['m3u']], 'size' : 0, 'm3u8_url': stream['m3u']}
+                self.streams[stream_id] = {'video_profile': stream_profile, 'container': 'm3u8', 'src': [], 'size' : 0, 'm3u8_url': stream['m3u']}
             except Exception as e:
                 log.i("vd: {} is not handled".format(stream['vd']))
                 log.i("info is {}".format(stream))
+    '''
     
 
     def download(self, **kwargs):
@@ -279,6 +282,7 @@ class Iqiyi(VideoExtractor):
                           'w', encoding='utf-8') as x:
                     x.write(srt)
                 print('Done.')    
+    '''
 
 '''
         if info["code"] != "A000000":
