@@ -17,6 +17,7 @@ def douyutv_download(url, output_dir = '.', merge = True, info_only = False, **k
     json_request_url = "http://m.douyu.com/html5/live?roomId=%s" % room_id
     content = get_content(json_request_url)
     data = json.loads(content)['data']
+    '''
     server_status = data.get('error',0)
     if server_status is not 0:
         raise ValueError("Server returned error:%s" % server_status)
@@ -39,10 +40,13 @@ def douyutv_download(url, output_dir = '.', merge = True, info_only = False, **k
         raise ValueError("Server returned error:%s" % server_status)
 
     real_url = data.get('live_url')
+    '''
+    real_url = data['hls_url']
+    title = data['room_name']
 
-    print_info(site_info, title, 'flv', float('inf'))
+    print_info(site_info, title, 'm3u8', float('inf'))
     if not info_only:
-        download_url_ffmpeg(real_url, title, 'flv', None, output_dir = output_dir, merge = merge)
+        download_url_ffmpeg(real_url, title, 'mp4', None, output_dir = output_dir, merge = merge)
 
 site_info = "douyu.com"
 download = douyutv_download
