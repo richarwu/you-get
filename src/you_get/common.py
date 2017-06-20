@@ -411,11 +411,11 @@ def post_content(url, headers={}, post_data={}, decoded=True):
 
 def url_size(url, faker = False, headers = {}):
     if faker:
-        response = urlopen_with_retry(request.Request(url, headers=fake_headers))
+        response = urlopen_with_retry(request.Request(url, headers=fake_headers, method='HEAD'))
     elif headers:
-        response = urlopen_with_retry(request.Request(url, headers=headers))
+        response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
     else:
-        response = urlopen_with_retry(url)
+        response = urlopen_with_retry(request.Request(url, method='HEAD'))
 
     size = response.headers['content-length']
     return int(size) if size!=None else float('inf')
