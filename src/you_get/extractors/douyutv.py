@@ -42,6 +42,7 @@ def douyutv_download(url, output_dir = '.', merge = True, info_only = False, **k
     real_url = data.get('live_url')
     '''
     real_url = data['hls_url']
+    data = json.loads(get_content('http://open.douyucdn.cn/api/RoomApi/room/'+room_id))['data']
     title = data['room_name']
 
     print_info(site_info, title, 'm3u8', float('inf'))
