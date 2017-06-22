@@ -763,13 +763,22 @@ class DummyProgressBar:
         pass
 
 def get_output_filename(urls, title, ext, output_dir, merge):
-    # lame hack for the --output-filename option
-    global output_filename
-    if output_filename:
-        if ext:
-            return output_filename + '.' + ext
-        return output_filename
+    out_fn = output_filename if output_filename else title
 
+    from .processor.ffmpeg import has_ffmpeg_installed
+    ffmpeg_installed = has_ffmpeg_installed()
+    ffmpeg_mapping = dict(flv='mp4', ts='mkv', f4v='mp4')
+    py_mapping = dict(f4v='flv')
+    merged_ext = None
+
+    if len(urls) > 1 and merge:
+        if ffmpeg_installed:
+            merged_ext = ffmpeg_mapping.get(ext)
+        else:
+            merged_ext = py_mapping.get(ext)
+    out_ext = merged_ext if merged_ext else ext
+    return '{}.{}'.format(out_fn, out_ext)
+    '''
     merged_ext = ext
     if (len(urls) > 1) and merge:
         from .processor.ffmpeg import has_ffmpeg_installed
@@ -786,6 +795,7 @@ def get_output_filename(urls, title, ext, output_dir, merge):
             else:
                 merged_ext = 'ts'
     return '%s.%s' % (title, merged_ext)
+    '''
 
 def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, faker=False, headers = {}, **kwargs):
     assert urls
