@@ -463,6 +463,7 @@ def url_info(url, faker = False, headers = {}):
         'image/png': 'png',
         'image/gif': 'gif',
         'application/pdf': 'pdf',
+        'application/vnd.apple.mpegurl': 'm3u8'
     }
     if type in mapping:
         ext = mapping[type]
@@ -484,6 +485,9 @@ def url_info(url, faker = False, headers = {}):
         size = headers['content-length'] and int(headers['content-length'])
     else:
         size = None
+
+    if ext in ('m3u', 'm3u8'):
+        size = 0
 
     return type, ext, size
 
