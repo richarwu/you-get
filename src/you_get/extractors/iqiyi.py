@@ -14,41 +14,7 @@ from zlib import decompress
 import hashlib
 import time
 
-'''
-Changelog:
--> http://www.iqiyi.com/common/flashplayer/20150916/MainPlayer_5_2_28_c3_3_7_4.swf
-   use @fffonion 's method in #617.
-   Add trace AVM(asasm) code in Iqiyi's encode function where the salt is put into the encode array and reassemble by RABCDasm(or WinRABCDasm),then use Fiddler to response modified file to replace the src file with its AutoResponder function ,set browser Fiddler proxy and play with !debug version! Flash Player ,finially get result in flashlog.txt(its location can be easily found in search engine).
-   Code Like (without letters after #comment:),it just do the job : trace("{IQIYI_SALT}:"+salt_array.join(""))
-   ```(Postion After getTimer)
-     findpropstrict      QName(PackageNamespace(""), "trace")
-     pushstring          "{IQIYI_SALT}:" #comment for you to locate the salt
-     getscopeobject      1
-     getslot             17 #comment: 17 is the salt slots number defined in code
-     pushstring          ""
-     callproperty        QName(Namespace("http://adobe.com/AS3/2006/builtin"), "join"), 1
-     add
-     callpropvoid        QName(PackageNamespace(""), "trace"), 1
-   ```
 
--> http://www.iqiyi.com/common/flashplayer/20150820/MainPlayer_5_2_27_2_c3_3_7_3.swf
-    some small changes in Zombie.bite function
-
-'''
-
-'''
-com.qiyi.player.core.model.def.DefinitonEnum
-bid meaning for quality
-0 none
-1 standard
-2 high
-3 super
-4 suprt-high
-5 fullhd
-10 4k
-96 topspeed
-
-'''
 '''
 def mix(tvid):
     salt = '4a1caba4b4465345366f28da7c117d20'
@@ -144,6 +110,7 @@ def iqiyi_m3u8_helper(m3u8):
 
 class Iqiyi(VideoExtractor):
     name = "爱奇艺 (Iqiyi)"
+    endpoint = 'http://cache.m.iqiyi.com/tmts/{0}/{1}/?t={2}&sc={3}&src={4}'
 
     stream_types = [
         {'id': '4k', 'container': 'm3u8', 'video_profile': '4k'},
@@ -155,12 +122,6 @@ class Iqiyi(VideoExtractor):
         {'id': 'SD', 'container': 'm3u8', 'video_profile': '360p'},
         {'id': 'LD', 'container': 'm3u8', 'video_profile': '210p'},
     ]
-    '''
-    supported_stream_types = [ 'high', 'standard']
-
-
-    stream_to_bid = {  '4k': 10, 'fullhd' : 5, 'suprt-high' : 4, 'super' : 3, 'high' : 2, 'standard' :1, 'topspeed' :96}
-    '''
     ids = ['4k','BD', 'TD', 'HD', 'SD', 'LD']
     vd_2_id = {10: '4k', 19: '4k', 5:'BD', 18: 'BD', 21: 'HD_H265', 2: 'HD', 4: 'TD', 17: 'TD_H265', 96: 'LD', 1: 'SD', 14: 'TD'}
     id_2_profile = {'4k':'4k', 'BD': '1080p','TD': '720p', 'HD': '540p', 'SD': '360p', 'LD': '210p', 'HD_H265': '540p H265', 'TD_H265': '720p H265'}
@@ -182,7 +143,7 @@ class Iqiyi(VideoExtractor):
         assert self.url or self.vid
 
         if self.url and not self.vid:
-            html = get_html(self.url)
+            html = get_content(self.url)
             tvid = r1(r'#curid=(.+)_', self.url) or \
                    r1(r'tvid=([^&]+)', self.url) or \
                    r1(r'data-player-tvid="([^"]+)"', html)
