@@ -12,15 +12,14 @@ patterns first.
 '''
 
 b64_patt = r'([A-Za-z0-9/=\+]+)'
-dqt_patt = r'"([\"]+)"'
-sqt_patt = r"'([\']+)'"
+dqt_patt = r'\"([^\"]+)\"'
+sqt_patt = r"\'([^\']+)\'"
 eql_patt = r'\s*[=:]\s*'
 #use it with care
-tag_patt = r'([\<]+)'
+tag_patt = r'([^\<]+)'
 
 def first_hit(pattns, text):
-'''find one value from bulks of info with multi patterns.
-F.I. search title from html with <h1> tags or <og:title> tags. '''
+    '''find one value from bulks of info with multi patterns. F.I. search title from html with <h1> tags or <og:title> tags. '''
     for patt in pattns:
         hit = re.search(patt, text)
         if hit is not None:
@@ -28,8 +27,8 @@ F.I. search title from html with <h1> tags or <og:title> tags. '''
     return None
 
 def first_hit_multi(pattns_list, text_list):
-'''multi source version of first_hit.
-F.I. search vid from both url and html'''
+    '''multi source version of first_hit.
+    F.I. search vid from both url and html'''
     for idx in range(len(text_list)):
         text = text_list[idx]
         pattns = pattns_list[idx]
