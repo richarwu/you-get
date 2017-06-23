@@ -14,7 +14,7 @@ patterns first.
 b64_patt = r'([A-Za-z0-9/=\+]+)'
 dqt_patt = r'"([\"]+)"'
 sqt_patt = r"'([\']+)'"
-eql_patt = r'\s*=\s*'
+eql_patt = r'\s*[=:]\s*'
 #use it with care
 tag_patt = r'([\<]+)'
 
@@ -36,6 +36,6 @@ F.I. search vid from both url and html'''
         hit = first_hit(pattns, text)
         if hit is not None:
             return hit
-    return hit
+    return None
 
 #multi vals, multi source, multi patterns ver? That dooms to produce long lines.
