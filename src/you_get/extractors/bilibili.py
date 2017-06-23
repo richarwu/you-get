@@ -17,7 +17,6 @@ import json
 import http.cookiejar
 import urllib.request
 
-appkey = 'f3bb208b3d081dc8'
 SECRETKEY_MINILOADER = '1c15888dc316e05a15fdd0a02ed6584f'
 SEC2 = '9b288147e5474dd2aa67085f716c560d'
 
@@ -91,42 +90,6 @@ def get_srt_xml(id):
     url = 'http://comment.bilibili.com/%s.xml' % id
     return get_html(url)
 
-
-def parse_srt_p(p):
-    fields = p.split(',')
-    assert len(fields) == 8, fields
-    time, mode, font_size, font_color, pub_time, pool, user_id, history = fields
-    time = float(time)
-
-    mode = int(mode)
-    assert 1 <= mode <= 8
-    # mode 1~3: scrolling
-    # mode 4: bottom
-    # mode 5: top
-    # mode 6: reverse?
-    # mode 7: position
-    # mode 8: advanced
-
-    pool = int(pool)
-    assert 0 <= pool <= 2
-    # pool 0: normal
-    # pool 1: srt
-    # pool 2: special?
-
-    font_size = int(font_size)
-
-    font_color = '#%06x' % int(font_color)
-
-    return pool, mode, font_size, font_color
-
-
-def parse_srt_xml(xml):
-    d = re.findall(r'<d p="([^"]+)">(.*)</d>', xml)
-    for x, y in d:
-        p = parse_srt_p(x)
-    raise NotImplementedError()
-
-
 def parse_cid_playurl(xml):
     from xml.dom.minidom import parseString
     try:
@@ -148,27 +111,6 @@ def parse_cid_playurl(xml):
     except Exception as e:
         log.w(e)
         return [], 0
-
-
-def bilibili_download_by_cids(cids, title, output_dir='.', merge=True, info_only=False):
-    urls = []
-    for cid in cids:
-        sign_this = hashlib.md5(bytes('cid={cid}&from=miniplay&player=1{SECRETKEY_MINILOADER}'.format(cid = cid, SECRETKEY_MINILOADER = SECRETKEY_MINILOADER), 'utf-8')).hexdigest()
-        url = 'http://interface.bilibili.com/playurl?&cid=' + cid + '&from=miniplay&player=1' + '&sign=' + sign_this
-        urls += [i
-                 if not re.match(r'.*\.qqvideo\.tc\.qq\.com', i)
-                 else re.sub(r'.*\.qqvideo\.tc\.qq\.com', 'http://vsrc.store.qq.com', i)
-                 for i in parse_cid_playurl(get_content(url))]
-
-    type_ = ''
-    size = 0
-    for url in urls:
-        _, type_, temp = url_info(url)
-        size += temp
-
-    print_info(site_info, title, type_, size)
-    if not info_only:
-        download_urls(urls, title, type_, total_size=None, output_dir=output_dir, merge=merge, headers={'Referer': 'http://www.bilibili.com/'})
 
 def test_bili_cdns(urls_list):
     import urllib.error
