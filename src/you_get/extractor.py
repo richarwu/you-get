@@ -29,6 +29,10 @@ class VideoExtractor():
         self.password_protected = False
         self.dash_streams = {}
         self.caption_tracks = {}
+        self.pattns = []
+        self.api_params = []
+        self.api_data = None
+        self.endpoint = None
 
         if args:
             self.url = args[0]
@@ -71,8 +75,18 @@ class VideoExtractor():
 
         self.download(**kwargs)
 
+    def match_params(self, from_url=True, **kwargs):
+        content = self.url if from_url else get_content(self.url)
+        for patt in self.pattns:
+            self.api_params.append(match1(content, patt))
+
+    def api_request(self, **kwargs):
+        req_url = self.endpoint.format(self.params)
+        self.api_data = get_content(req_url)
+
     def prepare(self, **kwargs):
-        pass
+        self.match_params(from_url=False, **kwargs)
+        self.api_request(**kwargs)
         #raise NotImplementedError()
 
     def extract(self, **kwargs):
