@@ -161,6 +161,10 @@ def rc4(key, data):
         out_list.append(char ^ prn)
 
     return bytes(out_list)
+
+def get_default_ua():
+    return 'Python-urllib/' + sys.version[:3]
+
 def maybe_print(*s):
     try: print(*s)
     except: pass
