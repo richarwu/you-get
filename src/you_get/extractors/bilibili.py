@@ -111,6 +111,9 @@ class Bilibili(VideoExtractor):
         self.referer = self.url
         self.page = get_content(self.url)
         self.title = first_hit([r'<h1\s*title='+dqt_patt], self.page)
+        if 'subtitle' in kwargs:
+            subtitle = kwargs['subtitle']
+            self.title = '{} {}'.format(self.title, subtitle)
 
         if 'bangumi.bilibili.com' in self.url:
             self.bangumi_entry(**kwargs)
@@ -178,7 +181,6 @@ class Bilibili(VideoExtractor):
         aid = ep_info['avId']
 
         idx = 0
-        print(len(ep_ids))
         while ep_ids[idx] != episode_id:
             idx += 1
 
@@ -477,10 +479,12 @@ def bilibili_download_playlist_by_url(url, **kwargs):
             Bilibili().download_by_url(ep_url, **kwargs)
     else:
         aid = first_hit([r'av(\d+)'], url)
-        page_list = len(json.loads(get_content('http://www.bilibili.com/widget/getPageList?aid={}'.format(aid))))
-        for no in range(1, page_list+1):
+        page_list = json.loads(get_content('http://www.bilibili.com/widget/getPageList?aid={}'.format(aid)))
+        page_cnt = len(page_list)
+        for no in range(1, page_cnt+1):
             page_url = 'http://www.bilibili.com/video/av{}/index_{}.html'.format(aid, no)
-            Bilibili().download_by_url(page_url, **kwargs)
+            subtitle = page_list[no-1]['pagename']
+            Bilibili().download_by_url(page_url, subtitle=subtitle, **kwargs)
 
 site = Bilibili()
 '''
