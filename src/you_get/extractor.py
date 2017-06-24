@@ -33,6 +33,7 @@ class VideoExtractor():
         self.api_params = []
         self.api_data = None
         self.endpoint = None
+        self.out = False
 
         if args:
             self.url = args[0]
@@ -44,6 +45,8 @@ class VideoExtractor():
         if 'extractor_proxy' in kwargs and kwargs['extractor_proxy']:
             set_proxy(parse_host(kwargs['extractor_proxy']))
         self.prepare(**kwargs)
+        if self.out:
+            return
         if 'extractor_proxy' in kwargs and kwargs['extractor_proxy']:
             unset_proxy()
 
@@ -114,7 +117,8 @@ class VideoExtractor():
             print("      quality:       %s" % stream['quality'])
 
         if 'size' in stream and stream['container'].lower() != 'm3u8':
-            print("      size:          %s MiB (%s bytes)" % (round(stream['size'] / 1048576, 1), stream['size']))
+            if stream['size'] != float('inf')  and stream['size'] != 0:
+                print("      size:          %s MiB (%s bytes)" % (round(stream['size'] / 1048576, 1), stream['size']))
 
         if 'm3u8_url' in stream:
             print("      m3u8_url:      {}".format(stream['m3u8_url']))
