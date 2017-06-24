@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .common import match1, maybe_print, download_urls, get_filename, parse_host, set_proxy, unset_proxy, get_content
+from .common import match1, maybe_print, download_urls, get_filename, parse_host, set_proxy, unset_proxy, get_content, dry_run
 from .common import print_more_compatible as print
 from .util import log
 from . import json_output
@@ -267,7 +267,7 @@ class VideoExtractor():
                           'w', encoding='utf-8') as x:
                     x.write(srt)
                 print('Done.')
-            if self.danmuku is not None:
+            if self.danmuku is not None and not dry_run:
                 filename = '{}.cmt.xml'.format(get_filename(self.title))
                 print('Downloading {} ...\n'.format(filename))
                 with open(os.path.join(kwargs['output_dir'], filename), 'w', encoding='utf8') as fp:
