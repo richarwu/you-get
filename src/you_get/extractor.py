@@ -34,6 +34,9 @@ class VideoExtractor():
         self.api_data = None
         self.endpoint = None
         self.out = False
+        self.ua = None
+        self.referer = None
+        self.danmuku = None
 
         if args:
             self.url = args[0]
@@ -244,12 +247,17 @@ class VideoExtractor():
             if not urls:
                 log.wtf('[Failed] Cannot extract video source.')
             # For legacy main()
-            download_urls(urls, self.title, ext, total_size,
+            headers = {}
+            if self.ua is not None:
+                headers['User-Agent'] = self.ua
+            if self.referer is not None:
+                headers['Referer'] = self.referer
+            download_urls(urls, self.title, ext, total_size, headers=headers,
                           output_dir=kwargs['output_dir'],
                           merge=kwargs['merge'],
                           av=stream_id in self.dash_streams)
             if 'caption' not in kwargs or not kwargs['caption']:
-                print('Skipping captions.')
+                print('Skipping captions or danmuku.')
                 return
             for lang in self.caption_tracks:
                 filename = '%s.%s.srt' % (get_filename(self.title), lang)
@@ -259,6 +267,11 @@ class VideoExtractor():
                           'w', encoding='utf-8') as x:
                     x.write(srt)
                 print('Done.')
+            if self.danmuku is not None:
+                filename = '{}.cmt.xml'.format(get_filename(self.title))
+                print('Downloading {} ...\n'.format(filename))
+                with open(os.path.join(kwargs['output_dir'], filename), 'w', encoding='utf8') as fp:
+                    fp.write(self.danmuku)
 
             # For main_dev()
             #download_urls(urls, self.title, self.streams[stream_id]['container'], self.streams[stream_id]['size'])
