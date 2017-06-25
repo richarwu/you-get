@@ -97,6 +97,7 @@ SITES = {
     'zhanqi'           : 'zhanqi',
 }
 
+current_state={'url':'', 'site':''}
 import getopt
 import json
 import locale
@@ -115,7 +116,6 @@ from .version import __version__
 from .util import log, term
 from .util.git import get_version
 from .util.strings import get_filename, unescape_html
-from . import json_output as json_output_
 
 dry_run = False
 json_output = False
@@ -797,9 +797,6 @@ def get_output_filename(urls, title, ext, output_dir, merge):
 
 def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, faker=False, headers={}, **kwargs):
     assert urls
-    if json_output:
-        json_output_.download_urls(urls=urls, title=title, ext=ext, total_size=total_size, refer=refer)
-        return
     if dry_run:
         print('Real URLs:\n%s' % '\n'.join(urls))
         return
@@ -815,6 +812,11 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
             import traceback
             traceback.print_exc(file=sys.stdout)
             pass
+
+    if json_output:
+        from . import json_output as json_output_module
+        json_output_module.download_urls_entry(urls, title, ext, total_size=total_size, refer=refer, headers=headers)
+        return
 
     title = get_filename(title)
     output_filename = get_output_filename(urls, title, ext, output_dir, merge)
@@ -1036,7 +1038,6 @@ def playlist_not_supported(name):
 
 def print_info(site_info, title, type, size):
     if json_output:
-        json_output_.print_info(site_info=site_info, title=title, type=type, size=size)
         return
     if type:
         type = type.lower()
@@ -1179,11 +1180,13 @@ def print_more_compatible(*args, **kwargs):
 
 
 def download_main(download, download_playlist, urls, playlist, **kwargs):
+    global current_state
     for url in urls:
         if url.startswith('https://'):
             url = url[8:]
         if not url.startswith('http://'):
             url = 'http://' + url
+        current_state['url'] = url
 
         if playlist:
             download_playlist(url, **kwargs)
@@ -1279,9 +1282,9 @@ def script_main(script_name, download, download_playlist, **kwargs):
             dry_run = True
         elif o in ('--json', ):
             json_output = True
-            # to fix extractors not use VideoExtractor
-            dry_run = True
+            dry_run = False
             info_only = False
+            caption = False
         elif o in ('-c', '--cookies'):
             try:
                 cookies = cookiejar.MozillaCookieJar(a)
@@ -1467,11 +1470,21 @@ def url_to_module(url):
             return import_module('you_get.extractors.universal'), url
 
 def any_download(url, **kwargs):
+    global current_state
     m, url = url_to_module(url)
+    try:
+        current_state['site'] = m.site_info
+    except Exception:
+        pass
     m.download(url, **kwargs)
 
 def any_download_playlist(url, **kwargs):
+    global current_state
     m, url = url_to_module(url)
+    try:
+        current_state['site'] = m.site_info
+    except Exception:
+        pass
     m.download_playlist(url, **kwargs)
 
 def main(**kwargs):

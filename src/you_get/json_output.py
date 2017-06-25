@@ -1,21 +1,16 @@
-
 import json
 
-# save info from common.print_info()
-last_info = None
+from .common import current_state
 
-def output(video_extractor, pretty_print=True):
-    ve = video_extractor
-    out = {}
-    out['url'] = ve.url
-    out['title'] = ve.title
-    out['site'] = ve.name
-    out['streams'] = ve.streams
+def output(ve, pretty_print=True):
+    '''VideoExtractor.download output comes here directly'''
+    out = dict(url=ve.url, title=ve.title, site=ve.name, streams=ve.streams)
     try:
         if ve.audiolang:
             out['audiolang'] = ve.audiolang
     except AttributeError:
         pass
+
     if pretty_print:
         print(json.dumps(out, indent=4, sort_keys=True, ensure_ascii=False))
     else:
@@ -25,31 +20,22 @@ def output(video_extractor, pretty_print=True):
 class VideoExtractor(object):
     pass
 
-def print_info(site_info=None, title=None, type=None, size=None):
-    global last_info
-    # create a VideoExtractor and save info for download_urls()
-    ve = VideoExtractor()
-    last_info = ve
-    ve.name = site_info
-    ve.title = title
-    ve.url = None
+def download_urls_entry(urls, title, ext, total_size=0, refer='', headers={}):
+    '''A non-VideoExtractor comes to common.download_urls, then here'''
 
-def download_urls(urls=None, title=None, ext=None, total_size=None, refer=None):
-    ve = last_info
-    if not ve:
-        ve = VideoExtractor()
-        ve.name = ''
-        ve.url = urls
-        ve.title=title
-    # save download info in streams
-    stream = {}
-    stream['container'] = ext
-    stream['size'] = total_size
-    stream['src'] = urls
+    stream = dict(container=ext, size=total_size, src=urls)
     if refer:
-        stream['refer'] = refer
-    stream['video_profile'] = '__default__'
-    ve.streams = {}
-    ve.streams['__default__'] = stream
+        stream['referer'] = refer
+    elif 'Referer' in headers:
+        stream['referer'] = headers['Referer']
+
+    if 'User-Agent' in headers:
+        stream['user-agent'] = headers['User-Agent']
+
+    ve = VideoExtractor()
+    ve.title = title
+    ve.url = current_state['url']
+    ve.name = current_state['site']
+    ve.streams = dict(_default=stream)
     output(ve)
 
