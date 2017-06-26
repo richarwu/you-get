@@ -162,6 +162,30 @@ def rc4(key, data):
 
     return bytes(out_list)
 
+class TaskState():
+    def __init__(self):
+        self.url = ''
+        self.site = ''
+        self.backend = 'download_http_best'
+        self.merge = True
+        self.download_caption = True
+        self.force = False
+        self.stream_id = ''
+        self.lang = ''
+
+        self.out_dir = '.'
+        self.out_fn = ''
+        self.cookies = None
+
+        self.is_playlist = False
+
+class GlobalState():
+    def __init__(self):
+        self.proxy_type = 'system'
+        self.proxy_string = ''
+        self.timeout = 600
+        self.debug = False
+
 def get_default_ua():
     return 'Python-urllib/' + sys.version[:3]
 
@@ -573,7 +597,7 @@ def url_save(url, filepath, bar, refer = None, is_part = False, faker = False, h
 
         with open(temp_filepath, open_mode) as output:
             while True:
-                buffer = response.read(1024 * 256)
+                buffer = response.read(1024 * 1024)
                 if not buffer:
                     if received == file_size: # Download finished
                         break
@@ -1230,8 +1254,8 @@ def script_main(script_name, download, download_playlist, **kwargs):
     -I | --input-file                   Read non-playlist urls from file.
     '''
 
-    short_opts = 'Vhfiuc:ndF:O:o:p:x:y:s:t:I:'
-    opts = ['version', 'help', 'force', 'info', 'url', 'cookies', 'no-caption', 'no-merge', 'no-proxy', 'debug', 'json', 'format=', 'stream=', 'itag=', 'output-filename=', 'output-dir=', 'player=', 'http-proxy=', 'socks-proxy=', 'extractor-proxy=', 'lang=', 'timeout=', 'input-file=']
+    short_opts = 'Vhfiuc:ndF:O:o:p:x:y:s:t:I:B:'
+    opts = ['version', 'help', 'force', 'info', 'url', 'cookies', 'no-caption', 'no-merge', 'no-proxy', 'debug', 'json', 'format=', 'stream=', 'itag=', 'output-filename=', 'output-dir=', 'player=', 'http-proxy=', 'socks-proxy=', 'extractor-proxy=', 'lang=', 'timeout=', 'input-file=', 'backend=']
 #dead code? download_playlist is a function and always True
 #if download_playlist:
     short_opts = 'l' + short_opts
@@ -1251,6 +1275,7 @@ def script_main(script_name, download, download_playlist, **kwargs):
     global extractor_proxy
     global cookies
     global output_filename
+    global current_state
 
     info_only = False
     playlist = False
@@ -1265,6 +1290,8 @@ def script_main(script_name, download, download_playlist, **kwargs):
     traceback = False
     timeout = 600
     urls_from_file = []
+    g_state = GlobalState()
+    t_state = TaskState()
 
     for o, a in opts:
         if o in ('-V', '--version'):
@@ -1276,15 +1303,19 @@ def script_main(script_name, download, download_playlist, **kwargs):
             sys.exit()
         elif o in ('-f', '--force'):
             force = True
+            t_state.force = True
         elif o in ('-i', '--info'):
             info_only = True
+            t_state.backend = 'info'
         elif o in ('-u', '--url'):
             dry_run = True
+            t_state.backend = 'url'
         elif o in ('--json', ):
             json_output = True
             dry_run = False
             info_only = False
             caption = False
+            t_state.backend = 'json'
         elif o in ('-c', '--cookies'):
             try:
                 cookies = cookiejar.MozillaCookieJar(a)
@@ -1314,35 +1345,53 @@ def script_main(script_name, download, download_playlist, **kwargs):
 
         elif o in ('-l', '--playlist'):
             playlist = True
+            t_state.is_playlist = True
         elif o in ('--no-caption',):
             caption = False
+            t_state.caption = False
         elif o in ('-n', '--no-merge'):
             merge = False
+            t_state.merge = False
         elif o in ('--no-proxy',):
             proxy = ''
+            g_state.proxy_type = 'no'
         elif o in ('-d', '--debug'):
             traceback = True
+            g_state.debug = True
             # Set level of root logger to DEBUG
             logging.getLogger().setLevel(logging.DEBUG)
         elif o in ('-F', '--format', '--stream', '--itag'):
             stream_id = a
+            t_state.stream_id = a
         elif o in ('-O', '--output-filename'):
             output_filename = a
+            t_state.out_fn = a
         elif o in ('-o', '--output-dir'):
             output_dir = a
+            t_state.out_dir = a
         elif o in ('-p', '--player'):
             player = a
             caption = False
+            t_state.backend = a
+            t_state.caption = False
         elif o in ('-x', '--http-proxy'):
             proxy = a
+            g_state.proxy_type = 'http'
+            g_state.proxy_string = a
         elif o in ('-s', '--socks-proxy'):
             socks_proxy = a
+            g_state.proxy_type = 'socks'
+            g_state.proxy_string = a
         elif o in ('-y', '--extractor-proxy'):
             extractor_proxy = a
+            g_state.proxy_type = 'http'
+            g_state.proxy_string = a
         elif o in ('--lang',):
             lang = a
+            t_state.lang = a
         elif o in ('-t', '--timeout'):
             timeout = int(a)
+            g_state.timeout = int(a)
         elif o in ('-I', '--input-file'):
             logging.debug('you are trying to load urls from {}'.format(a))
             if playlist:
@@ -1352,6 +1401,9 @@ def script_main(script_name, download, download_playlist, **kwargs):
                 for line in input_file:
                     url = line.strip()
                     urls_from_file.append(url)
+        elif o in ('-B', '--backend'):
+            t_state.backend = a
+            current_state['backend'] = a
         else:
             log.e("try 'you-get --help' for more options")
             sys.exit(2)
@@ -1360,23 +1412,9 @@ def script_main(script_name, download, download_playlist, **kwargs):
         sys.exit()
     args.extend(urls_from_file)
 
-    if (socks_proxy):
-        try:
-            import socket
-            import socks
-            socks_proxy_addrs = socks_proxy.split(':')
-            socks.set_default_proxy(socks.SOCKS5,
-                                    socks_proxy_addrs[0],
-                                    int(socks_proxy_addrs[1]))
-            socket.socket = socks.socksocket
-            def getaddrinfo(*args):
-                return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', (args[0], args[1]))]
-            socket.getaddrinfo = getaddrinfo
-        except ImportError:
-            log.w('Error importing PySocks library, socks proxy ignored.'
-                'In order to use use socks proxy, please install PySocks.')
+    if socks_proxy:
+        set_socks_proxy(socks_proxy)
     else:
-        import socket
         set_http_proxy(proxy)
 
     socket.setdefaulttimeout(timeout)
@@ -1423,6 +1461,24 @@ def script_main(script_name, download, download_playlist, **kwargs):
             log.i(args)
             raise
         sys.exit(1)
+
+def check_ip():
+    print(request.urlopen('http://httpbin.org/ip').read())
+
+def set_socks_proxy(socks_proxy):
+    try:
+        import socks
+        host, port = socks_proxy.split(':')
+
+        socks.set_default_proxy(socks.SOCKS5, host, int(port))
+        socket.socket = socks.socksocket
+        def getaddrinfo(*args):
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', (args[0], args[1]))]
+        socket.getaddrinfo = getaddrinfo
+
+    except ImportError:
+        log.w('Error importing PySocks library, socks proxy ignored.'
+            'In order to use use socks proxy, please install PySocks.')
 
 def google_search(url):
     keywords = r1(r'https?://(.*)', url)
