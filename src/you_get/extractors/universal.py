@@ -22,8 +22,7 @@ def universal_download(url, output_dir='.', merge=True, info_only=False, **kwarg
 
     if content_type.startswith('text/html'):
         # extract an HTML page
-        response = get_response(url, faker=True)
-        page = str(response.data)
+        page = get_content(url, headers=fake_headers)
 
         page_title = r1(r'<title>([^<]*)', page)
         if page_title:
@@ -70,7 +69,7 @@ def universal_download(url, output_dir='.', merge=True, info_only=False, **kwarg
 
         for candy in candies:
             try:
-                mime, ext, size = url_info(candy['url'], faker=True)
+                mime, ext, size = url_info(candy['url'], headers=fake_headers)
                 if not size: size = float('Int')
             except:
                 continue
@@ -79,7 +78,7 @@ def universal_download(url, output_dir='.', merge=True, info_only=False, **kwarg
                 if not info_only:
                     download_urls([candy['url']], candy['title'], ext, size,
                                   output_dir=output_dir, merge=merge,
-                                  faker=True)
+                                  headers=fake_headers)
         return
 
     else:
@@ -87,12 +86,12 @@ def universal_download(url, output_dir='.', merge=True, info_only=False, **kwarg
         filename = parse.unquote(url.split('/')[-1])
         title = '.'.join(filename.split('.')[:-1])
         ext = filename.split('.')[-1]
-        _, _, size = url_info(url, faker=True)
+        size = url_size(url, headers=fake_headers)
         print_info(site_info, title, ext, size)
         if not info_only:
             download_urls([url], title, ext, size,
                           output_dir=output_dir, merge=merge,
-                          faker=True)
+                          headers=fake_headers)
         return
 
 site_info = None
