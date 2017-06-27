@@ -162,6 +162,21 @@ def rc4(key, data):
 
     return bytes(out_list)
 
+def general_m3u8_extractor(url):
+    path_len = len(url.split('/')[-1])
+    base_url = url[:-path_len]
+
+    m3u8_list = get_content(url).split('\n')
+    urls = []
+    for line in m3u8_list:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            if line.startswith('http'):
+                urls.append(line)
+            else:
+                urls.append(base_url + line)
+    return urls
+
 class TaskState():
     def __init__(self):
         self.url = ''
@@ -1037,7 +1052,7 @@ def playlist_not_supported(name):
         raise NotImplementedError('Playlist is not supported for ' + name)
     return f
 
-def print_info(site_info, title, type, size):
+def print_info(site_info, title, type, size, **kwargs):
     if json_output:
         return
     if type:
@@ -1102,7 +1117,11 @@ def print_info(site_info, title, type, size):
     elif type in ['image/gif']:
         type_info = "Graphics Interchange Format (%s)" % type
     elif type in ['m3u8']:
-        type_info = 'M3U8 Playlist {}'.format(type)
+        if 'm3u8_type' in kwargs:
+            if kwargs['m3u8_type'] == 'master':
+                type_info = 'M3U8 Master {}'.format(type)
+        else:
+            type_info = 'M3U8 Playlist {}'.format(type)
 
     else:
         type_info = "Unknown type (%s)" % type
@@ -1112,6 +1131,8 @@ def print_info(site_info, title, type, size):
     print("Type:      ", type_info)
     if type != 'm3u8':
         print("Size:      ", round(size / 1048576, 2), "MiB (" + str(size) + " Bytes)")
+    if type == 'm3u8' and 'm3u8_url' in kwargs:
+        print('M3U8 Url:   {}'.format(kwargs['m3u8_url']))
     print()
 
 def mime_to_container(mime):
