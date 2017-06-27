@@ -5,7 +5,7 @@ __all__ = ['mixcloud_download']
 from ..common import *
 
 def mixcloud_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url, faker=True)
+    html = get_content(url, headers=fake_headers)
     title = r1(r'<meta property="og:title" content="([^"]*)"', html)
     preview_url = r1(r'm-preview=\"([^\"]+)\"', html)
     preview = r1(r'previews(.*)\.mp3$', preview_url)
