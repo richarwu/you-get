@@ -352,6 +352,7 @@ def urlopen_with_retry(*args, **kwargs):
     for i in range(10):
         try:
             return request.urlopen(*args, **kwargs)
+#could leak exceptions
         except socket.timeout:
             logging.debug('request attempt %s timeout' % str(i + 1))
 
@@ -434,10 +435,7 @@ def post_content(url, headers={}, post_data={}, decoded=True):
     return data
 
 def url_size(url, headers = {}):
-    if headers:
-        response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
-    else:
-        response = urlopen_with_retry(request.Request(url, method='HEAD'))
+    response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
 
     size = response.headers['content-length']
     return int(size) if size!=None else float('inf')
@@ -448,22 +446,16 @@ def urls_size(urls, headers = {}):
 def get_head(url, headers = {}, get_method = 'HEAD'):
     logging.debug('get_head: %s' % url)
 
-    if headers:
-        req = request.Request(url, headers=headers)
-    else:
-        req = request.Request(url)
+    req = request.Request(url, headers=headers)
     req.get_method = lambda: get_method
     res = urlopen_with_retry(req)
     return dict(res.headers)
 
 def url_info(url, headers = {}):
+#This is evil. Horrible performance for m3u8, too much work in vain, returning None for type crash downstream. refactor as soon as possible.
     logging.debug('url_info: %s' % url)
 
-    if headers:
-        response = urlopen_with_retry(request.Request(url, headers=headers))
-    else:
-        response = urlopen_with_retry(request.Request(url))
-
+    response = urlopen_with_retry(request.Request(url, headers=headers))
     headers = response.headers
 
     type = headers['content-type']
@@ -515,12 +507,7 @@ def url_locations(urls, headers = {}):
     locations = []
     for url in urls:
         logging.debug('url_locations: %s' % url)
-
-        if headers:
-            response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
-        else:
-            response = urlopen_with_retry(request.Request(url, method='HEAD'))
-
+        response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
         locations.append(response.url)
     return locations
 
