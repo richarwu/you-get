@@ -7,7 +7,7 @@ from xml.dom.minidom import parseString
 import you_get.extractors.acfun
 
 def tudou_download_by_iid(iid, title, output_dir = '.', merge = True, info_only = False):
-    data = json.loads(get_decoded_html('http://www.tudou.com/outplay/goto/getItemSegs.action?iid=%s' % iid))
+    data = json.loads(get_content('http://www.tudou.com/outplay/goto/getItemSegs.action?iid=%s' % iid))
     temp = max([data[i] for i in data if 'size' in data[i][0]], key=lambda x:sum([part['size'] for part in x]))
     vids, size = [t["k"] for t in temp], sum([t["size"] for t in temp])
 
@@ -72,7 +72,7 @@ def tudou_download(url, output_dir = '.', merge = True, info_only = False, **kwa
 # obsolete?
 def parse_playlist(url):
     aid = r1('http://www.tudou.com/playlist/p/a(\d+)(?:i\d+)?\.html', url)
-    html = get_decoded_html(url)
+    html = get_content(url)
     if not aid:
         aid = r1(r"aid\s*[:=]\s*'(\d+)'", html)
     if re.match(r'http://www.tudou.com/albumcover/', url):
@@ -89,7 +89,7 @@ def parse_playlist(url):
     return [(atitle + '-' + x['title'], str(x['itemId'])) for x in json.loads(get_html(url))['message']]
 
 def parse_plist(url):
-    html = get_decoded_html(url)
+    html = get_content(url)
     lcode = r1(r"lcode:\s*'([^']+)'", html)
     plist_info = json.loads(get_content('http://www.tudou.com/crp/plist.action?lcode=' + lcode))
     return ([(item['kw'], item['iid']) for item in plist_info['items']])

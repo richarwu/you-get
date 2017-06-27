@@ -132,7 +132,7 @@ def netease_download(url, output_dir = '.', merge = True, info_only = False, **k
     if "music.163.com" in url:
         netease_cloud_music_download(url, output_dir, merge, info_only, **kwargs)
     else:
-        html = get_decoded_html(url)
+        html = get_content(url)
 
         title = r1('movieDescription=\'([^\']+)\'', html) or r1('<title>(.+)</title>', html)
 

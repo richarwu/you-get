@@ -325,16 +325,6 @@ def get_html(url, encoding = None):
     content = get_response(url).data
     return str(content, 'utf-8', 'ignore')
 
-# DEPRECATED in favor of get_content()
-def get_decoded_html(url):
-    response = get_response(url)
-    data = response.data
-    charset = r1(r'charset=([\w-]+)', response.headers['content-type'])
-    if charset:
-        return data.decode(charset, 'ignore')
-    else:
-        return data
-
 def get_location(url):
     logging.debug('get_location: %s' % url)
 

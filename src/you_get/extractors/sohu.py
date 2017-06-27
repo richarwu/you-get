@@ -30,14 +30,14 @@ def sohu_download(url, output_dir = '.', merge = True, info_only = False, extrac
     if re.match(r'http://tv.sohu.com/', url):
         if extractor_proxy:
             set_proxy(tuple(extractor_proxy.split(":")))
-        info = json.loads(get_decoded_html('http://hot.vrs.sohu.com/vrs_flash.action?vid=%s' % vid))
+        info = json.loads(get_content('http://hot.vrs.sohu.com/vrs_flash.action?vid=%s' % vid))
         for qtyp in ["oriVid","superVid","highVid" ,"norVid","relativeId"]:
             if 'data' in info:
                 hqvid = info['data'][qtyp]
             else:
                 hqvid = info[qtyp]
             if hqvid != 0 and hqvid != vid :
-                info = json.loads(get_decoded_html('http://hot.vrs.sohu.com/vrs_flash.action?vid=%s' % hqvid))
+                info = json.loads(get_content('http://hot.vrs.sohu.com/vrs_flash.action?vid=%s' % hqvid))
                 if not 'allot' in info:
                     continue
                 break
@@ -57,7 +57,7 @@ def sohu_download(url, output_dir = '.', merge = True, info_only = False, extrac
         # assert data['clipsURL'][0].endswith('.mp4')
 
     else:
-        info = json.loads(get_decoded_html('http://my.tv.sohu.com/play/videonew.do?vid=%s&referer=http://my.tv.sohu.com' % vid))
+        info = json.loads(get_content('http://my.tv.sohu.com/play/videonew.do?vid=%s&referer=http://my.tv.sohu.com' % vid))
         host = info['allot']
         prot = info['prot']
         tvid = info['tvid']
