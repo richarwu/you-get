@@ -302,7 +302,7 @@ def undeflate(data):
     return decompressobj.decompress(data)+decompressobj.flush()
 
 # DEPRECATED in favor of get_content()
-def get_response(url, faker = False):
+def get_response(url):
     logging.debug('get_response: %s' % url)
 
     # install cookies
@@ -310,10 +310,7 @@ def get_response(url, faker = False):
         opener = request.build_opener(request.HTTPCookieProcessor(cookies))
         request.install_opener(opener)
 
-    if faker:
-        response = request.urlopen(request.Request(url, headers = fake_headers), None)
-    else:
-        response = request.urlopen(url)
+    response = request.urlopen(url)
 
     data = response.read()
     if response.info().get('Content-Encoding') == 'gzip':
@@ -324,13 +321,13 @@ def get_response(url, faker = False):
     return response
 
 # DEPRECATED in favor of get_content()
-def get_html(url, encoding = None, faker = False):
-    content = get_response(url, faker).data
+def get_html(url, encoding = None):
+    content = get_response(url).data
     return str(content, 'utf-8', 'ignore')
 
 # DEPRECATED in favor of get_content()
-def get_decoded_html(url, faker = False):
-    response = get_response(url, faker)
+def get_decoded_html(url):
+    response = get_response(url)
     data = response.data
     charset = r1(r'charset=([\w-]+)', response.headers['content-type'])
     if charset:
@@ -431,10 +428,8 @@ def post_content(url, headers={}, post_data={}, decoded=True):
 
     return data
 
-def url_size(url, faker = False, headers = {}):
-    if faker:
-        response = urlopen_with_retry(request.Request(url, headers=fake_headers, method='HEAD'))
-    elif headers:
+def url_size(url, headers = {}):
+    if headers:
         response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
     else:
         response = urlopen_with_retry(request.Request(url, method='HEAD'))
@@ -442,8 +437,8 @@ def url_size(url, faker = False, headers = {}):
     size = response.headers['content-length']
     return int(size) if size!=None else float('inf')
 
-def urls_size(urls, faker = False, headers = {}):
-    return sum([url_size(url, faker=faker, headers=headers) for url in urls])
+def urls_size(urls, headers = {}):
+    return sum([url_size(url, headers=headers) for url in urls])
 
 def get_head(url, headers = {}, get_method = 'HEAD'):
     logging.debug('get_head: %s' % url)
@@ -456,12 +451,10 @@ def get_head(url, headers = {}, get_method = 'HEAD'):
     res = urlopen_with_retry(req)
     return dict(res.headers)
 
-def url_info(url, faker = False, headers = {}):
+def url_info(url, headers = {}):
     logging.debug('url_info: %s' % url)
 
-    if faker:
-        response = urlopen_with_retry(request.Request(url, headers=fake_headers))
-    elif headers:
+    if headers:
         response = urlopen_with_retry(request.Request(url, headers=headers))
     else:
         response = urlopen_with_retry(request.Request(url))
@@ -513,14 +506,12 @@ def url_info(url, faker = False, headers = {}):
 
     return type, ext, size
 
-def url_locations(urls, faker = False, headers = {}):
+def url_locations(urls, headers = {}):
     locations = []
     for url in urls:
         logging.debug('url_locations: %s' % url)
 
-        if faker:
-            response = urlopen_with_retry(request.Request(url, headers=fake_headers, method='HEAD'))
-        elif headers:
+        if headers:
             response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
         else:
             response = urlopen_with_retry(request.Request(url, method='HEAD'))
@@ -528,11 +519,11 @@ def url_locations(urls, faker = False, headers = {}):
         locations.append(response.url)
     return locations
 
-def url_save(url, filepath, bar, refer = None, is_part = False, faker = False, headers = {}, timeout = None, **kwargs):
+def url_save(url, filepath, bar, refer = None, is_part = False, headers = {}, timeout = None, **kwargs):
 #When a referer specified with param refer, the key must be 'Referer' for the hack here
     if refer is not None:
         headers['Referer'] = refer
-    file_size = url_size(url, faker = faker, headers = headers)
+    file_size = url_size(url, headers = headers)
 
     if os.path.exists(filepath):
         if not force and file_size == os.path.getsize(filepath):
@@ -565,9 +556,7 @@ def url_save(url, filepath, bar, refer = None, is_part = False, faker = False, h
         open_mode = 'wb'
 
     if received < file_size:
-        if faker:
-            headers = fake_headers
-        elif headers:
+        if headers:
             headers = headers
         else:
             headers = {}
@@ -615,7 +604,7 @@ def url_save(url, filepath, bar, refer = None, is_part = False, faker = False, h
         os.remove(filepath) # on Windows rename could fail if destination filepath exists
     os.rename(temp_filepath, filepath)
 
-def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore_range=False, refer=None, is_part=False, faker=False, headers={}):
+def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore_range=False, refer=None, is_part=False, headers={}):
     def dyn_update_url(received):
         if callable(dyn_callback):
             logging.debug('Calling callback %s for new URL from %s' % (dyn_callback.__name__, received))
@@ -650,9 +639,7 @@ def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore
     else:
         open_mode = 'wb'
 
-    if faker:
-        headers = fake_headers
-    elif headers:
+    if headers:
         headers = headers
     else:
         headers = {}
@@ -819,7 +806,7 @@ def get_output_filename(urls, title, ext, output_dir, merge):
     return '%s.%s' % (title, merged_ext)
     '''
 
-def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, faker=False, headers={}, **kwargs):
+def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, headers={}, **kwargs):
     assert urls
     if dry_run:
         print('Real URLs:\n%s' % '\n'.join(urls))
@@ -831,7 +818,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
 
     if not total_size:
         try:
-            total_size = urls_size(urls, faker=faker, headers=headers)
+            total_size = urls_size(urls, headers=headers)
         except:
             import traceback
             traceback.print_exc(file=sys.stdout)
@@ -859,7 +846,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
         url = urls[0]
         print('Downloading %s ...' % output_filename)
         bar.update()
-        url_save(url, output_filepath, bar, refer = refer, faker = faker, headers = headers, **kwargs)
+        url_save(url, output_filepath, bar, refer = refer, headers = headers, **kwargs)
         bar.done()
     else:
         parts = []
@@ -870,7 +857,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
             filepath = os.path.join(output_dir, filename)
             parts.append(filepath)
             bar.update_piece(i + 1)
-            url_save(url, filepath, bar, refer = refer, is_part = True, faker = faker, headers = headers, **kwargs)
+            url_save(url, filepath, bar, refer = refer, is_part = True, headers = headers, **kwargs)
         bar.done()
 
         if not merge:
@@ -939,7 +926,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
 
     print()
 
-def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, faker=False, headers = {}, **kwargs):
+def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, headers = {}, **kwargs):
     assert urls
     if dry_run:
         print('Real URLs:\n%s\n' % urls)
@@ -968,7 +955,7 @@ def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=No
         print('Downloading %s ...' % filename)
         filepath = os.path.join(output_dir, filename)
         parts.append(filepath)
-        url_save_chunked(url, filepath, bar, refer = refer, faker = faker, headers = headers, **kwargs)
+        url_save_chunked(url, filepath, bar, refer = refer, headers = headers, **kwargs)
         bar.done()
 
         if not merge:
@@ -995,7 +982,7 @@ def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=No
             filepath = os.path.join(output_dir, filename)
             parts.append(filepath)
             bar.update_piece(i + 1)
-            url_save_chunked(url, filepath, bar, refer = refer, is_part = True, faker = faker, headers = headers)
+            url_save_chunked(url, filepath, bar, refer = refer, is_part = True, headers = headers)
         bar.done()
 
         if not merge:
@@ -1017,7 +1004,7 @@ def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=No
 
     print()
 
-def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', refer=None, merge=True, faker=False):
+def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', refer=None, merge=True):
     assert url
     if dry_run:
         print('Real URL:\n%s\n' % [url])
@@ -1034,7 +1021,7 @@ def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', re
     assert has_rtmpdump_installed(), "RTMPDump not installed."
     download_rtmpdump_stream(url,  title, ext,params, output_dir)
 
-def download_url_ffmpeg(url,title, ext,params={}, total_size=0, output_dir='.', refer=None, merge=True, faker=False, stream=True):
+def download_url_ffmpeg(url,title, ext,params={}, total_size=0, output_dir='.', refer=None, merge=True, stream=True):
     assert url
     if dry_run:
         print('Real URL:\n%s\n' % [url])
