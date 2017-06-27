@@ -33,11 +33,11 @@ def videomega_download(url, output_dir='.', merge=True, info_only=False, **kwarg
     s = match1(js, r"'([^']+)'\.split").split('|')
     src = t.format(*s)
 
-    type, ext, size = url_info(src, faker=True)
+    type, ext, size = url_info(src, headers=fake_headers)
 
     print_info(site_info, title, type, size)
     if not info_only:
-        download_urls([src], title, ext, size, output_dir, merge=merge, faker=True)
+        download_urls([src], title, ext, size, output_dir, merge=merge, headers=fake_headers)
 
 site_info = "Videomega.tv"
 download = videomega_download
