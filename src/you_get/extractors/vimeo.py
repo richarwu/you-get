@@ -48,11 +48,11 @@ def vimeo_download_by_id(id, title=None, output_dir='.', merge=True, info_only=F
     streams = sorted(streams, key=lambda i: i['height'])
     url = streams[-1]['url']
 
-    type, ext, size = url_info(url, faker=True)
+    type, ext, size = url_info(url, headers=fake_headers)
 
     print_info(site_info, title, type, size)
     if not info_only:
-        download_urls([url], title, ext, size, output_dir, merge=merge, faker=True)
+        download_urls([url], title, ext, size, output_dir, merge=merge, headers=fake_headers)
 
 def vimeo_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
     if re.match(r'https?://vimeo.com/channels/\w+', url):
