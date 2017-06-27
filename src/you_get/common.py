@@ -1206,9 +1206,9 @@ def print_more_compatible(*args, **kwargs):
 def download_main(download, download_playlist, urls, playlist, **kwargs):
     global current_state
     for url in urls:
-        if url.startswith('https://'):
-            url = url[8:]
-        if not url.startswith('http://'):
+        scheme = parse.urlparse(url).scheme
+        if not scheme:
+            log.w('No scheme detected. HTTP assumed')
             url = 'http://' + url
         current_state['url'] = url
 
@@ -1475,7 +1475,6 @@ def set_socks_proxy(socks_proxy):
         def getaddrinfo(*args):
             return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', (args[0], args[1]))]
         socket.getaddrinfo = getaddrinfo
-
     except ImportError:
         log.w('Error importing PySocks library, socks proxy ignored.'
             'In order to use use socks proxy, please install PySocks.')
