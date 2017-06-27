@@ -70,11 +70,11 @@ def huaban_download_board(url, output_dir, **kwargs):
     print_info(site_info, board.title, 'jpg', float('Inf'))
     for pin in board.pins:
         download_urls([pin.url], pin.id, pin.ext, float('Inf'),
-                      output_dir=output_dir, faker=True, **kwargs)
+                      output_dir=output_dir, headers=fake_headers, **kwargs)
 
 
 def huaban_download(url, output_dir='.', **kwargs):
-    if re.match(r'http://huaban\.com/boards/\d+/', url):
+    if re.match(r'http://huaban\.com/boards/\d+', url):
         huaban_download_board(url, output_dir, **kwargs)
     else:
         print('Only board (画板) pages are supported currently')
