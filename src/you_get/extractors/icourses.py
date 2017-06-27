@@ -21,7 +21,7 @@ def icourses_download(url, merge=False, output_dir='.', **kwargs):
     if real_url is not None:
         for tries in range(0, 5):
             try:
-                _, type_, size = url_info(real_url, faker=True)
+                _, type_, size = url_info(real_url, headers=fake_headers)
                 break
             except error.HTTPError:
                 logging.warning('Failed to fetch the video file! Retrying...')
@@ -31,7 +31,7 @@ def icourses_download(url, merge=False, output_dir='.', **kwargs):
         print_info(site_info, title, type_, size)
         if not kwargs['info_only']:
             download_urls_chunked([real_url], title, 'flv',
-                          total_size=size, output_dir=output_dir, refer=url, merge=merge, faker=True, ignore_range=True, chunk_size=15000000, dyn_callback=icourses_parser.icourses_cn_url_parser)
+                          total_size=size, output_dir=output_dir, refer=url, merge=merge, headers=fake_headers, ignore_range=True, chunk_size=15000000, dyn_callback=icourses_parser.icourses_cn_url_parser)
 
 
 # Why not using VideoExtractor: This site needs specical download method
