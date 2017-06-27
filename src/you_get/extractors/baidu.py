@@ -9,9 +9,12 @@ from .universal import *
 
 
 def baidu_get_song_data(sid):
-    data = json.loads(get_html(
-        'http://music.baidu.com/data/music/fmlink?songIds=%s' % sid, faker=True))['data']
-
+    endpoint = 'http://music.baidu.com/data/music/fmlink?songIds='
+    json_data = json.loads(get_content(endpoint+sid, headers=fake_headers))
+    data = json_data['data']
+#error_code is tricky (22000) so just check the type of data here
+    if type(data) == type(''):
+        return None
     if data['xcode'] != '':
         # inside china mainland
         return data['songList'][0]
@@ -56,23 +59,24 @@ def baidu_download_song(sid, output_dir='.', merge=True, info_only=False):
         title = r1(r'data_name="([^"]+)"', html)
         file_name = title
 
-    type, ext, size = url_info(url, faker=True)
+    type, ext, size = url_info(url, headers=fake_headers)
     print_info(site_info, title, type, size)
     if not info_only:
         download_urls([url], file_name, ext, size,
-                      output_dir, merge=merge, faker=True)
+                      output_dir, merge=merge, headers=fake_headers)
 
     try:
-        type, ext, size = url_info(lrc, faker=True)
+        type, ext, size = url_info(lrc, headers=fake_headers)
         print_info(site_info, title, type, size)
         if not info_only:
-            download_urls([lrc], file_name, ext, size, output_dir, faker=True)
+            download_urls([lrc], file_name, ext, size, output_dir, headers=fake_headers)
     except:
         pass
 
 
 def baidu_download_album(aid, output_dir='.', merge=True, info_only=False):
-    html = get_html('http://music.baidu.com/album/%s' % aid, faker=True)
+    endpoint = 'http://music.baidu.com/album/' + aid
+    html = get_content(endpoint, headers=fake_headers)
     album_name = r1(r'<h2 class="album-name">(.+?)<\/h2>', html)
     artist = r1(r'<span class="author_list" title="(.+?)">', html)
     output_dir = '%s/%s - %s' % (output_dir, artist, album_name)
@@ -86,18 +90,18 @@ def baidu_download_album(aid, output_dir='.', merge=True, info_only=False):
         song_lrc = baidu_get_song_lyric(song_data)
         file_name = '%02d.%s' % (track_nr, song_title)
 
-        type, ext, size = url_info(song_url, faker=True)
+        type, ext, size = url_info(song_url, headers=fake_headers)
         print_info(site_info, song_title, type, size)
         if not info_only:
             download_urls([song_url], file_name, ext, size,
-                          output_dir, merge=merge, faker=True)
+                          output_dir, merge=merge, headers=fake_headers)
 
         if song_lrc:
-            type, ext, size = url_info(song_lrc, faker=True)
+            type, ext, size = url_info(song_lrc, headers=fake_headers)
             print_info(site_info, song_title, type, size)
             if not info_only:
                 download_urls([song_lrc], file_name, ext,
-                              size, output_dir, faker=True)
+                              size, output_dir, headers=fake_headers)
 
         track_nr += 1
 
@@ -108,7 +112,7 @@ def baidu_download(url, output_dir='.', stream_type=None, merge=True, info_only=
         real_url, title, ext, size = baidu_pan_download(url)
         if not info_only:
             download_urls([real_url], title, ext, size,
-                          output_dir, url, merge=merge, faker=True)
+                          output_dir, url, merge=merge, headers=fake_headers)
     elif re.match(r'http://music.baidu.com/album/\d+', url):
         id = r1(r'http://music.baidu.com/album/(\d+)', url)
         baidu_download_album(id, output_dir, merge, info_only)
@@ -206,7 +210,7 @@ def baidu_pan_download(url):
     real_url = r1(r'dlink":"([^"]+)"', response_content).replace('\\/', '/')
     title = r1(r'server_filename":"([^"]+)"', response_content)
     assert real_url
-    type, ext, size = url_info(real_url, faker=True)
+    type, ext, size = url_info(real_url, headers=fake_headers)
     title_wrapped = json.loads('{"wrapper":"%s"}' % title)
     title = title_wrapped['wrapper']
     logging.debug(real_url)
