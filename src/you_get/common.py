@@ -443,13 +443,12 @@ def urls_size(urls, headers = {}):
             return float('inf')
     return total_size
 
-def get_head(url, headers = {}, get_method = 'HEAD'):
+def get_headers(url, headers={}, get_method='HEAD'):
     logging.debug('get_head: %s' % url)
-
-    req = request.Request(url, headers=headers)
-    req.get_method = lambda: get_method
+#python 3.3
+    req = request.Request(url, headers=headers, method=get_method)
     res = urlopen_with_retry(req)
-    return dict(res.headers)
+    return res.headers
 
 def url_info(url, headers = {}):
 #This is evil. Horrible performance for m3u8, too much work in vain, returning None for type crash downstream. refactor as soon as possible.

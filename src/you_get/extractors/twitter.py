@@ -29,7 +29,7 @@ def twitter_download(url, output_dir='.', merge=True, info_only=False, **kwargs)
             filename = parse.unquote(url.split('/')[-1])
             title = '.'.join(filename.split('.')[:-1])
             ext = url.split(':')[-2].split('.')[-1]
-            size = int(get_head(url)['Content-Length'])
+            size = urls_size([url])
             images.append({'title': title,
                            'url': url,
                            'ext': ext,
