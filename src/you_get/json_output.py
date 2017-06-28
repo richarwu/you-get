@@ -20,13 +20,11 @@ def output(ve, pretty_print=True):
 class VideoExtractor(object):
     pass
 
-def download_urls_entry(urls, title, ext, total_size=0, refer='', headers={}):
+def download_urls_entry(urls, title, ext, total_size=0, headers={}):
     '''A non-VideoExtractor comes to common.download_urls, then here'''
 
     stream = dict(container=ext, size=total_size, src=urls)
-    if refer:
-        stream['referer'] = refer
-    elif 'Referer' in headers:
+    if 'Referer' in headers:
         stream['referer'] = headers['Referer']
 
     if 'User-Agent' in headers:

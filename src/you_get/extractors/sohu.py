@@ -72,7 +72,8 @@ def sohu_download(url, output_dir = '.', merge = True, info_only = False, extrac
 
     print_info(site_info, title, 'mp4', size)
     if not info_only:
-        download_urls(urls, title, 'mp4', size, output_dir, refer = url, merge = merge)
+        headers = dict(Referer=url)
+        download_urls(urls, title, 'mp4', size, output_dir, headers=headers, merge=merge)
 
 site_info = "Sohu.com"
 download = sohu_download

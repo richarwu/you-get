@@ -511,10 +511,7 @@ def url_locations(urls, headers = {}):
         locations.append(response.url)
     return locations
 
-def url_save(url, filepath, bar, refer = None, is_part = False, headers = {}, timeout = None, **kwargs):
-#When a referer specified with param refer, the key must be 'Referer' for the hack here
-    if refer is not None:
-        headers['Referer'] = refer
+def url_save(url, filepath, bar, is_part=False, headers={}, timeout=None, **kwargs):
     file_size = url_size(url, headers = headers)
 
     if os.path.exists(filepath):
@@ -555,8 +552,6 @@ def url_save(url, filepath, bar, refer = None, is_part = False, headers = {}, ti
 #sohu's broken CDN forbids range: bytes=x-
         if received:
             headers['Range'] = 'bytes=' + str(received) + '-'
-        if refer:
-            headers['Referer'] = refer
 
         if timeout:
             response = urlopen_with_retry(request.Request(url, headers=headers), timeout=timeout)
@@ -596,7 +591,7 @@ def url_save(url, filepath, bar, refer = None, is_part = False, headers = {}, ti
         os.remove(filepath) # on Windows rename could fail if destination filepath exists
     os.rename(temp_filepath, filepath)
 
-def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore_range=False, refer=None, is_part=False, headers={}):
+def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore_range=False, is_part=False, headers={}):
     def dyn_update_url(received):
         if callable(dyn_callback):
             logging.debug('Calling callback %s for new URL from %s' % (dyn_callback.__name__, received))
@@ -639,8 +634,6 @@ def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore
         url = dyn_update_url(received)
         if not ignore_range:
             headers['Range'] = 'bytes=' + str(received) + '-'
-    if refer:
-        headers['Referer'] = refer
 
     response = urlopen_with_retry(request.Request(url, headers=headers))
 
@@ -798,7 +791,7 @@ def get_output_filename(urls, title, ext, output_dir, merge):
     return '%s.%s' % (title, merged_ext)
     '''
 
-def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, headers={}, **kwargs):
+def download_urls(urls, title, ext, total_size, output_dir='.', merge=True, headers={}, **kwargs):
     assert urls
     if dry_run:
         print('Real URLs:\n%s' % '\n'.join(urls))
@@ -818,7 +811,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
 
     if json_output:
         from . import json_output as json_output_module
-        json_output_module.download_urls_entry(urls, title, ext, total_size=total_size, refer=refer, headers=headers)
+        json_output_module.download_urls_entry(urls, title, ext, total_size=total_size, headers=headers)
         return
 
     title = get_filename(title)
@@ -838,7 +831,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
         url = urls[0]
         print('Downloading %s ...' % output_filename)
         bar.update()
-        url_save(url, output_filepath, bar, refer = refer, headers = headers, **kwargs)
+        url_save(url, output_filepath, bar, headers=headers, **kwargs)
         bar.done()
     else:
         parts = []
@@ -849,7 +842,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
             filepath = os.path.join(output_dir, filename)
             parts.append(filepath)
             bar.update_piece(i + 1)
-            url_save(url, filepath, bar, refer = refer, is_part = True, headers = headers, **kwargs)
+            url_save(url, filepath, bar, is_part=True, headers=headers, **kwargs)
         bar.done()
 
         if not merge:
@@ -918,7 +911,7 @@ def download_urls(urls, title, ext, total_size, output_dir='.', refer=None, merg
 
     print()
 
-def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=None, merge=True, headers = {}, **kwargs):
+def download_urls_chunked(urls, title, ext, total_size, output_dir='.', merge=True, headers={}, **kwargs):
     assert urls
     if dry_run:
         print('Real URLs:\n%s\n' % urls)
@@ -947,7 +940,7 @@ def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=No
         print('Downloading %s ...' % filename)
         filepath = os.path.join(output_dir, filename)
         parts.append(filepath)
-        url_save_chunked(url, filepath, bar, refer = refer, headers = headers, **kwargs)
+        url_save_chunked(url, filepath, bar, headers=headers, **kwargs)
         bar.done()
 
         if not merge:
@@ -974,7 +967,7 @@ def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=No
             filepath = os.path.join(output_dir, filename)
             parts.append(filepath)
             bar.update_piece(i + 1)
-            url_save_chunked(url, filepath, bar, refer = refer, is_part = True, headers = headers)
+            url_save_chunked(url, filepath, bar, is_part = True, headers = headers)
         bar.done()
 
         if not merge:
@@ -996,7 +989,7 @@ def download_urls_chunked(urls, title, ext, total_size, output_dir='.', refer=No
 
     print()
 
-def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', refer=None, merge=True):
+def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', merge=True):
     assert url
     if dry_run:
         print('Real URL:\n%s\n' % [url])
@@ -1013,7 +1006,7 @@ def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', re
     assert has_rtmpdump_installed(), "RTMPDump not installed."
     download_rtmpdump_stream(url,  title, ext,params, output_dir)
 
-def download_url_ffmpeg(url,title, ext,params={}, total_size=0, output_dir='.', refer=None, merge=True, stream=True):
+def download_url_ffmpeg(url,title, ext,params={}, total_size=0, output_dir='.', merge=True, stream=True):
     assert url
     if dry_run:
         print('Real URL:\n%s\n' % [url])
