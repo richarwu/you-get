@@ -434,14 +434,14 @@ def post_content(url, headers={}, post_data={}, decoded=True):
 
     return data
 
-def url_size(url, headers = {}):
-    response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
-
-    size = response.headers['content-length']
-    return int(size) if size!=None else float('inf')
-
 def urls_size(urls, headers = {}):
-    return sum([url_size(url, headers=headers) for url in urls])
+    total_size = 0
+    for url in urls:
+        response = urlopen_with_retry(request.Request(url, headers=headers, method='HEAD'))
+        size = response.headers['content-length']
+        if size is None:
+            return float('inf')
+    return total_size
 
 def get_head(url, headers = {}, get_method = 'HEAD'):
     logging.debug('get_head: %s' % url)
@@ -512,7 +512,7 @@ def url_locations(urls, headers = {}):
     return locations
 
 def url_save(url, filepath, bar, is_part=False, headers={}, timeout=None, **kwargs):
-    file_size = url_size(url, headers = headers)
+    file_size = urls_size([url], headers = headers)
 
     if os.path.exists(filepath):
         if not force and file_size == os.path.getsize(filepath):

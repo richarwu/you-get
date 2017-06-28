@@ -30,7 +30,7 @@ def flickr_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
     except Exception: # extract images
         image = match1(page, r'<meta property="og:image" content="([^"]*)')
         ext = 'jpg'
-        size = url_size(image)
+        size = urls_size([image])
 
         print_info(site_info, title, ext, size)
         if not info_only:

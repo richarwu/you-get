@@ -271,7 +271,7 @@ class YouTube(VideoExtractor):
                     dash_mp4_a_url = burls[0].firstChild.nodeValue
                     dash_mp4_a_size = burls[0].getAttribute('yt:contentLength')
                     if not dash_mp4_a_size:
-                        try: dash_mp4_a_size = url_size(dash_mp4_a_url)
+                        try: dash_mp4_a_size = urls_size([dash_mp4_a_url])
                         except: continue
                 elif mimeType == 'audio/webm':
                     rep = aset.getElementsByTagName('Representation')[-1]
@@ -279,7 +279,7 @@ class YouTube(VideoExtractor):
                     dash_webm_a_url = burls[0].firstChild.nodeValue
                     dash_webm_a_size = burls[0].getAttribute('yt:contentLength')
                     if not dash_webm_a_size:
-                        try: dash_webm_a_size = url_size(dash_webm_a_url)
+                        try: dash_webm_a_size = urls_size([dash_webm_a_url])
                         except: continue
                 elif mimeType == 'video/mp4':
                     for rep in aset.getElementsByTagName('Representation'):
@@ -290,7 +290,7 @@ class YouTube(VideoExtractor):
                         dash_url = burls[0].firstChild.nodeValue
                         dash_size = burls[0].getAttribute('yt:contentLength')
                         if not dash_size:
-                            try: dash_size = url_size(dash_url)
+                            try: dash_size = urls_size([dash_url])
                             except: continue
                         self.dash_streams[itag] = {
                             'quality': '%sx%s' % (w, h),
@@ -310,7 +310,7 @@ class YouTube(VideoExtractor):
                         dash_url = burls[0].firstChild.nodeValue
                         dash_size = burls[0].getAttribute('yt:contentLength')
                         if not dash_size:
-                            try: dash_size = url_size(dash_url)
+                            try: dash_size = urls_size([dash_url])
                             except: continue
                         self.dash_streams[itag] = {
                             'quality': '%sx%s' % (w, h),

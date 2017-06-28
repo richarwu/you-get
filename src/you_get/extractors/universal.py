@@ -86,7 +86,7 @@ def universal_download(url, output_dir='.', merge=True, info_only=False, **kwarg
         filename = parse.unquote(url.split('/')[-1])
         title = '.'.join(filename.split('.')[:-1])
         ext = filename.split('.')[-1]
-        size = url_size(url, headers=fake_headers)
+        size = urls_size([url], headers=fake_headers)
         print_info(site_info, title, ext, size)
         if not info_only:
             download_urls([url], title, ext, size,
