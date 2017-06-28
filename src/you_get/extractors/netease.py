@@ -4,7 +4,6 @@
 __all__ = ['netease_download']
 
 from ..common import *
-from ..common import print_more_compatible as print
 from ..util import fs
 from json import loads
 import hashlib

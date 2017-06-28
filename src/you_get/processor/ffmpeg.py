@@ -4,7 +4,6 @@ import logging
 import os.path
 import subprocess
 from ..util.strings import parameterize
-from ..common import print_more_compatible as print
 
 try:
     from subprocess import DEVNULL

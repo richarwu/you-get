@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from ..common import *
-from ..common import print_more_compatible as print
 from ..extractor import VideoExtractor
 from ..util import log
 from .. import json_output

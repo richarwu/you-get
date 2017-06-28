@@ -1,10 +1,33 @@
 #!/usr/bin/env python
 
 from .common import match1, maybe_print, download_urls, get_filename, parse_host, set_proxy, unset_proxy, get_content, dry_run
-from .common import print_more_compatible as print
 from .util import log
 from . import json_output
 import os
+import re
+
+class SimpleExtractor():
+    def __init__(self):
+        self.url = None
+        self.title = None
+        self.streams = {}
+        self.streams['_default'] = {}
+
+    def download_by_url(self, url, state=None, **kwargs):
+        self.url = url
+        self.page = get_content(url)
+        self.title = re.search(self.title_patt, self.page).group(1)
+        self.video_url = re.search(self.video_patt, self.page).group(1)
+        _, ext, size = url_info(self.video_url)
+        default_stream=dict(src=self.video_url, size=size, container=ext)
+        self.streams['_default'] = default_stream
+
+        backend_dispatch(self, state=state, **kwargs)
+
+    def backend_dispatch(self, state=None, **kwargs):
+        pass
+
+
 
 class Extractor():
     def __init__(self, *args):
