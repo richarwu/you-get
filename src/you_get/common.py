@@ -113,7 +113,7 @@ from http import cookiejar
 from importlib import import_module
 
 from .version import __version__
-from .util import log, term
+from .util import log
 from .util.git import get_version
 from .util.strings import get_filename, unescape_html
 
@@ -658,7 +658,8 @@ def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore
     os.rename(temp_filepath, filepath)
 
 class SimpleProgressBar:
-    term_size = term.get_terminal_size()[1]
+    import shutil
+    term_size = shutil.get_terminal_size((70, 24))[0]
 
     def __init__(self, total_size, total_pieces = 1):
         self.displayed = False
@@ -1178,9 +1179,13 @@ def download_main(download, download_playlist, urls, playlist, **kwargs):
 
 def script_main(script_name, download, download_playlist, **kwargs):
     def version():
-        log.i('version %s, a tiny downloader that scrapes the web.'
-              % get_version(kwargs['repo_path']
-            if 'repo_path' in kwargs else __version__))
+        fork_suf = '-testing'
+        if 'repo_path' in kwargs:
+            ver = get_version(kwargs['repo_path'])
+        else:
+            ver = __version__  
+        ver += fork_suf
+        log.i('version {}, a tiny downloader that scrapes the web.'.format(ver))
 
     logging.basicConfig(format='[%(levelname)s] %(message)s')
 
