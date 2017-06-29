@@ -10,6 +10,7 @@ import base64
 import logging
 from urllib import error
 import re
+import random
 
 __all__ = ['icourses_download']
 
@@ -25,7 +26,7 @@ def icourses_download(url, merge=False, output_dir='.', **kwargs):
                 break
             except error.HTTPError:
                 logging.warning('Failed to fetch the video file! Retrying...')
-                sleep(random.Random().randint(0, 5))  # Prevent from blockage
+                sleep(random.Random().randint(1, 5))  # Prevent from blockage
                 real_url = icourses_parser.icourses_cn_url_parser()
                 title = icourses_parser.title
         print_info(site_info, title, type_, size)
@@ -33,7 +34,7 @@ def icourses_download(url, merge=False, output_dir='.', **kwargs):
             headers = fake_headers.copy()
             headers['Referer'] = url
             download_urls_chunked([real_url], title, 'flv',
-                          total_size=size, output_dir=output_dir, merge=merge, headers=headers, ignore_range=True, chunk_size=15000000, dyn_callback=icourses_parser.icourses_cn_url_parser)
+                          total_size=size, output_dir=output_dir, headers=headers, limit=15000000, dyn_callback=icourses_parser.icourses_cn_url_parser)
 
 
 # Why not using VideoExtractor: This site needs specical download method
@@ -82,6 +83,7 @@ class ICousesExactor(object):
         title = title_a + title_b  # WIP, FIXME
         title = re.sub('( +|\n|\t|\r|\&nbsp\;)', '',
                        unescape_html(title).replace(' ', ''))
+        self.title = title
         server_time = match1(html, server_time_patt)
         flashvars = match1(html, flashvars_patt)
         uuid = match1(flashvars, uuid_patt)
@@ -90,28 +92,23 @@ class ICousesExactor(object):
         url_parts = {'v': server_time, 'other': other_args,
                      'uuid': uuid, 'IService': res_url}
         req_url = '%s?%s' % (res_url, parse.urlencode(url_parts))
-        logging.debug('Requesting video resource location...')
-        xml_resp = get_html(req_url)
+        xml_resp = get_content(req_url)
         xml_obj = ET.fromstring(xml_resp)
-        logging.debug('The result was {}'.format(xml_obj.get('status')))
         if xml_obj.get('status') != 'success':
             raise ValueError('Server returned error!')
         if received:
-            play_type = 'seek'
+            play_type = 'empty'
         else:
             play_type = 'play'
             received -= 1
         common_args = {'lv': PLAYER_BASE_VER, 'ls': play_type,
-                       'lt': datetime.datetime.now().strftime('%m-%d/%H:%M:%S'),
+                       'lt': datetime.datetime.now().strftime('%-m-%-d/%-H:%-M:%-S'),
                        'start': received + 1}
         media_host = xml_obj.find(".//*[@name='host']").text
+        media_host = get_media_host(media_host)
         media_url = media_host + xml_obj.find(".//*[@name='url']").text
-        # This is what they called `SSLModule`... But obviously, just a kind of
-        # encryption, takes absolutely no effect in protecting data intergrity
         if xml_obj.find(".//*[@name='ssl']").text != 'true':
             logging.debug('The encryption mode is disabled')
-            # when the so-called `SSLMode` is not activated, the parameters, `h`
-            # and `p` can be found in response
             arg_h = xml_obj.find(".//*[@name='h']").text
             assert arg_h
             arg_r = xml_obj.find(".//*[@name='p']").text or ENCRYPT_MOD_VER
@@ -119,31 +116,23 @@ class ICousesExactor(object):
             url_args.update({'h': arg_h, 'r': arg_r})
             final_url = '{}?{}'.format(
                 media_url, parse.urlencode(url_args))
-            self.title = title
             return final_url
-        # when the `SSLMode` is activated, we need to receive the timestamp and the
-        # time offset (?) value from the server
-        logging.debug('The encryption mode is in effect')
-        ssl_callback = get_html(
-            '{}/ssl/ssl.shtml'.format(media_host)).split(',')
-        ssl_timestamp = int(datetime.datetime.strptime(
-            ssl_callback[1], "%b %d %H:%M:%S %Y").timestamp() + int(ssl_callback[0]))
-        sign_this = ENCRYPT_SALT + \
-            parse.urlparse(media_url).path + str(ssl_timestamp)
-        arg_h = base64.b64encode(hashlib.md5(
-            bytes(sign_this, 'utf-8')).digest())
-        # Post-processing, may subject to change, so leaving this alone...
-        arg_h = arg_h.decode('utf-8').strip('=').replace('+',
-                                                         '-').replace('/', '_')
-        arg_r = ssl_timestamp
+        ran = random.randint(0, 9999999)
+        ssl_callback = get_content('{}/ssl/ssl.shtml?r={}'.format(media_host, ran)).split(',')
+        ssl_ts = int(datetime.datetime.strptime(ssl_callback[1], "%b %d %H:%M:%S %Y").timestamp() + int(ssl_callback[0]))
+        sign_this = ENCRYPT_SALT + parse.urlparse(media_url).path + str(ssl_ts)
+        arg_h = base64.b64encode(hashlib.md5(bytes(sign_this, 'utf-8')).digest(), altchars=b'-_')
+        arg_h = arg_h.decode('utf-8').strip('=')
         url_args = common_args.copy()
-        url_args.update({'h': arg_h, 'r': arg_r, 'p': ENCRYPT_MOD_VER})
-        final_url = '{}?{}'.format(
-            media_url, parse.urlencode(url_args))
-        logging.debug('Crafted URL: {}'.format(final_url))
-        self.title = title
+        url_args.update({'h': arg_h, 'r': ssl_ts, 'p': ENCRYPT_MOD_VER})
+        final_url = '{}?{}'.format(media_url, parse.urlencode(url_args))
+
         return final_url
 
+def get_media_host(ori_host):
+    res = get_content(ori_host + '/ssl/host.shtml').strip()
+    path = parse.urlparse(ori_host).path
+    return ''.join([res, path])
 
 site_info = 'icourses.cn'
 download = icourses_download

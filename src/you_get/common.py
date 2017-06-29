@@ -591,7 +591,7 @@ def url_save(url, filepath, bar, is_part=False, headers={}, timeout=None, **kwar
         os.remove(filepath) # on Windows rename could fail if destination filepath exists
     os.rename(temp_filepath, filepath)
 
-def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore_range=False, is_part=False, headers={}):
+def url_save_chunked(url, filepath, bar, dyn_callback=None, limit=0, headers={}):
     def dyn_update_url(received):
         if callable(dyn_callback):
             logging.debug('Calling callback %s for new URL from %s' % (dyn_callback.__name__, received))
@@ -626,26 +626,18 @@ def url_save_chunked(url, filepath, bar, dyn_callback=None, chunk_size=0, ignore
     else:
         open_mode = 'wb'
 
-    if headers:
-        headers = headers
-    else:
-        headers = {}
-    if received:
-        url = dyn_update_url(received)
-        if not ignore_range:
-            headers['Range'] = 'bytes=' + str(received) + '-'
-
     response = urlopen_with_retry(request.Request(url, headers=headers))
+    total_size = response.headers['content-length']
 
     with open(temp_filepath, open_mode) as output:
         this_chunk = received
         while True:
             buffer = response.read(1024 * 256)
-            if not buffer:
+            if not buffer or int(total_size) <= received:
                 break
             output.write(buffer)
             received += len(buffer)
-            if chunk_size and (received - this_chunk) >= chunk_size:
+            if limit and (received - this_chunk) >= limit:
                 url = dyn_callback(received)
                 this_chunk = received
                 response = urlopen_with_retry(request.Request(url, headers=headers))
@@ -912,82 +904,24 @@ def download_urls(urls, title, ext, total_size, output_dir='.', merge=True, head
 
     print()
 
-def download_urls_chunked(urls, title, ext, total_size, output_dir='.', merge=True, headers={}, **kwargs):
-    assert urls
-    if dry_run:
-        print('Real URLs:\n%s\n' % urls)
-        return
-
-    if player:
-        launch_player(player, urls)
-        return
+def download_urls_chunked(urls, title, ext, total_size, output_dir='.' , headers={}, **kwargs):
+    if dry_run or player:
+        log.wtf('Non standard protocol')
 
     title = get_filename(title)
 
     filename = '%s.%s' % (title, ext)
     filepath = os.path.join(output_dir, filename)
-    if total_size:
-        if not force and os.path.exists(filepath[:-3] + '.mkv'):
-            print('Skipping %s: file already exists' % filepath[:-3] + '.mkv')
-            print()
-            return
-        bar = SimpleProgressBar(total_size, len(urls))
-    else:
-        bar = PiecesProgressBar(total_size, len(urls))
+    if not force and os.path.exists(filepath):
+        print('Skipping %s: file already exists\n' % filepath)
+        return
+    bar = SimpleProgressBar(total_size, len(urls))
 
-    if len(urls) == 1:
-        parts = []
-        url = urls[0]
-        print('Downloading %s ...' % filename)
-        filepath = os.path.join(output_dir, filename)
-        parts.append(filepath)
-        url_save_chunked(url, filepath, bar, headers=headers, **kwargs)
-        bar.done()
-
-        if not merge:
-            print()
-            return
-        if ext == 'ts':
-            from .processor.ffmpeg import has_ffmpeg_installed
-            if has_ffmpeg_installed():
-                from .processor.ffmpeg import ffmpeg_convert_ts_to_mkv
-                if ffmpeg_convert_ts_to_mkv(parts, os.path.join(output_dir, title + '.mkv')):
-                    for part in parts:
-                        os.remove(part)
-                else:
-                    os.remove(os.path.join(output_dir, title + '.mkv'))
-            else:
-                print('No ffmpeg is found. Conversion aborted.')
-        else:
-            print("Can't convert %s files" % ext)
-    else:
-        parts = []
-        print('Downloading %s.%s ...' % (title, ext))
-        for i, url in enumerate(urls):
-            filename = '%s[%02d].%s' % (title, i, ext)
-            filepath = os.path.join(output_dir, filename)
-            parts.append(filepath)
-            bar.update_piece(i + 1)
-            url_save_chunked(url, filepath, bar, is_part = True, headers = headers)
-        bar.done()
-
-        if not merge:
-            print()
-            return
-        if ext == 'ts':
-            from .processor.ffmpeg import has_ffmpeg_installed
-            if has_ffmpeg_installed():
-                from .processor.ffmpeg import ffmpeg_concat_ts_to_mkv
-                if ffmpeg_concat_ts_to_mkv(parts, os.path.join(output_dir, title + '.mkv')):
-                    for part in parts:
-                        os.remove(part)
-                else:
-                    os.remove(os.path.join(output_dir, title + '.mkv'))
-            else:
-                print('No ffmpeg is found. Merging aborted.')
-        else:
-            print("Can't merge %s files" % ext)
-
+    url = urls[0]
+    print('Downloading %s ...' % filename)
+    filepath = os.path.join(output_dir, filename)
+    url_save_chunked(url, filepath, bar, headers=headers, **kwargs)
+    bar.done()
     print()
 
 def download_rtmp_url(url,title, ext,params={}, total_size=0, output_dir='.', merge=True):
