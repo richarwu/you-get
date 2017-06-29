@@ -6,7 +6,7 @@ from ..common import *
 import json
 
 def vine_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
 
     vid = r1(r'vine.co/v/([^/]+)', url)
     title = r1(r'<title>([^<]*)</title>', html)

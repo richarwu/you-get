@@ -9,7 +9,7 @@ import time
 def quanmin_download(url, output_dir = '.', merge = True, info_only = False, **kwargs):
     roomid = url[url.rfind("/")+1:]
     json_request_url = 'http://www.quanmin.tv/json/rooms/{}/info4.json'.format(roomid)
-    content = get_html(json_request_url)
+    content = get_content(json_request_url)
     data = json.loads(content)
 
     title = data["title"]

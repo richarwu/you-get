@@ -6,7 +6,7 @@ import urllib.request, urllib.parse
 from ..common import *
 
 def douban_download(url, output_dir = '.', merge = True, info_only = False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
 
     if re.match(r'https?://movie', url):
         title = match1(html, 'name="description" content="([^"]+)')

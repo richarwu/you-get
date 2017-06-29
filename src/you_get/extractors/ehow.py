@@ -8,12 +8,12 @@ def ehow_download(url, output_dir = '.', merge = True, info_only = False, **kwar
 	
 	assert re.search(r'http://www.ehow.com/video_', url), "URL you entered is not supported"
 
-	html = get_html(url)
+	html = get_content(url)
 	contentid = r1(r'<meta name="contentid" scheme="DMINSTR2" content="([^"]+)" />', html)
 	vid = r1(r'"demand_ehow_videoid":"([^"]+)"', html)
 	assert vid
 
-	xml = get_html('http://www.ehow.com/services/video/series.xml?demand_ehow_videoid=%s' % vid)
+	xml = get_content('http://www.ehow.com/services/video/series.xml?demand_ehow_videoid=%s' % vid)
     
 	from xml.dom.minidom import parseString
 	doc = parseString(xml)

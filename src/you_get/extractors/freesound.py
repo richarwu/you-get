@@ -5,7 +5,7 @@ __all__ = ['freesound_download']
 from ..common import *
 
 def freesound_download(url, output_dir = '.', merge = True, info_only = False, **kwargs):
-    page = get_html(url)
+    page = get_content(url)
     
     title = r1(r'<meta property="og:title" content="([^"]*)"', page)
     preview_url = r1(r'<meta property="og:audio" content="([^"]*)"', page)

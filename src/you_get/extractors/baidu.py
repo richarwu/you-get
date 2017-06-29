@@ -54,7 +54,7 @@ def baidu_download_song(sid, output_dir='.', merge=True, info_only=False):
         lrc = baidu_get_song_lyric(data)
         file_name = "%s - %s - %s" % (title, album, artist)
     else:
-        html = get_html("http://music.baidu.com/song/%s" % sid)
+        html = get_content("http://music.baidu.com/song/%s" % sid)
         url = r1(r'data_url="([^"]+)"', html)
         title = r1(r'data_name="([^"]+)"', html)
         file_name = title
@@ -127,7 +127,7 @@ def baidu_download(url, output_dir='.', stream_type=None, merge=True, info_only=
             embed_download(url, output_dir, merge=merge, info_only=info_only)
         except:
             # images
-            html = get_html(url)
+            html = get_content(url)
             title = r1(r'title:"([^"]+)"', html)
 
             items = re.findall(

@@ -10,7 +10,7 @@ import re
 
 def cntv_download_by_id(id, title = None, output_dir = '.', merge = True, info_only = False):
     assert id
-    info = json.loads(get_html('http://vdn.apps.cntv.cn/api/getHttpVideoInfo.do?pid=' + id))
+    info = json.loads(get_content('http://vdn.apps.cntv.cn/api/getHttpVideoInfo.do?pid=' + id))
     title = title or info['title']
     video = info['video']
     alternatives = [x for x in video.keys() if x.endswith('hapters')]
@@ -33,13 +33,13 @@ def cntv_download(url, output_dir = '.', merge = True, info_only = False, **kwar
     if re.match(r'http://tv\.cntv\.cn/video/(\w+)/(\w+)', url):
         id = match1(url, r'http://tv\.cntv\.cn/video/\w+/(\w+)')
     elif re.match(r'http://tv\.cctv\.com/\d+/\d+/\d+/\w+.shtml', url):
-        id = r1(r'var guid = "(\w+)"', get_html(url))
+        id = r1(r'var guid = "(\w+)"', get_content(url))
     elif re.match(r'http://\w+\.cntv\.cn/(\w+/\w+/(classpage/video/)?)?\d+/\d+\.shtml', url) or \
          re.match(r'http://\w+.cntv.cn/(\w+/)*VIDE\d+.shtml', url) or \
          re.match(r'http://(\w+).cntv.cn/(\w+)/classpage/video/(\d+)/(\d+).shtml', url) or \
          re.match(r'http://\w+.cctv.com/\d+/\d+/\d+/\w+.shtml', url) or \
          re.match(r'http://\w+.cntv.cn/\d+/\d+/\d+/\w+.shtml', url): 
-        id = r1(r'videoCenterId","(\w+)"', get_html(url))
+        id = r1(r'videoCenterId","(\w+)"', get_content(url))
     elif re.match(r'http://xiyou.cntv.cn/v-[\w-]+\.html', url):
         id = r1(r'http://xiyou.cntv.cn/v-([\w-]+)\.html', url)
     else:

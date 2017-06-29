@@ -8,7 +8,7 @@ def naver_download(url, output_dir = '.', merge = True, info_only = False, **kwa
 
 	assert re.search(r'http://tvcast.naver.com/v/', url), "URL is not supported"
 
-	html = get_html(url)
+	html = get_content(url)
 	contentid = re.search(r'var rmcPlayer = new nhn.rmcnmv.RMCVideoPlayer\("(.+?)", "(.+?)"',html)
 	videoid = contentid.group(1)
 	inkey = contentid.group(2)
@@ -16,7 +16,7 @@ def naver_download(url, output_dir = '.', merge = True, info_only = False, **kwa
 	assert inkey
 	info_key = urllib.parse.urlencode({'vid': videoid, 'inKey': inkey, })
 	down_key = urllib.parse.urlencode({'masterVid': videoid,'protocol': 'p2p','inKey': inkey, })
-	inf_xml = get_html('http://serviceapi.rmcnmv.naver.com/flash/videoInfo.nhn?%s' % info_key )
+	inf_xml = get_content('http://serviceapi.rmcnmv.naver.com/flash/videoInfo.nhn?%s' % info_key )
 
 	from xml.dom.minidom import parseString
 	doc_info = parseString(inf_xml)
@@ -24,7 +24,7 @@ def naver_download(url, output_dir = '.', merge = True, info_only = False, **kwa
 	title = Subject.data
 	assert title
 
-	xml = get_html('http://serviceapi.rmcnmv.naver.com/flash/playableEncodingOption.nhn?%s' % down_key )
+	xml = get_content('http://serviceapi.rmcnmv.naver.com/flash/playableEncodingOption.nhn?%s' % down_key )
 	doc = parseString(xml)
 
 	encodingoptions = doc.getElementsByTagName('EncodingOption')

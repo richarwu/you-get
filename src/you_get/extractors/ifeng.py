@@ -7,7 +7,7 @@ from ..common import *
 def ifeng_download_by_id(id, title = None, output_dir = '.', merge = True, info_only = False):
     assert r1(r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', id), id
     url = 'http://vxml.ifengimg.com/video_info_new/%s/%s/%s.xml' % (id[-2], id[-2:], id)
-    xml = get_html(url, 'utf-8')
+    xml = get_content(url, 'utf-8')
     title = r1(r'Name="([^"]+)"', xml)
     title = unescape_html(title)
     url = r1(r'VideoPlayUrl="([^"]+)"', xml)

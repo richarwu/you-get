@@ -6,7 +6,7 @@ from ..common import *
 import json
 
 def facebook_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
 
     title = r1(r'<title id="pageTitle">(.+)</title>', html)
     sd_urls = list(set([

@@ -5,7 +5,7 @@ __all__ = ['archive_download']
 from ..common import *
 
 def archive_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
     title = r1(r'<meta property="og:title" content="([^"]*)"', html)
     source = r1(r'<meta property="og:video" content="([^"]*)"', html)
     mime, ext, size = url_info(source)

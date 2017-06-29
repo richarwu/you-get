@@ -6,11 +6,11 @@ from ..common import *
 import json
 
 def magisto_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
     
     video_hash = r1(r'video\/([a-zA-Z0-9]+)', url)
     api_url = 'https://www.magisto.com/api/video/{}'.format(video_hash)
-    content = get_html(api_url)
+    content = get_content(api_url)
     data = json.loads(content)
     title1 = data['title']
     title2 = data['creator']

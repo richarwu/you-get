@@ -9,7 +9,7 @@ from .youku import youku_download_by_vid
 from xml.dom.minidom import parseString
 
 def miomio_download(url, output_dir = '.', merge = True, info_only = False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
 
     title = r1(r'<meta name="description" content="([^"]*)"', html)
     flashvars = r1(r'flashvars="(type=[^"]*)"', html)

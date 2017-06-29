@@ -316,30 +316,6 @@ def undeflate(data):
     decompressobj = zlib.decompressobj(-zlib.MAX_WBITS)
     return decompressobj.decompress(data)+decompressobj.flush()
 
-# DEPRECATED in favor of get_content()
-def get_response(url):
-    logging.debug('get_response: %s' % url)
-
-    # install cookies
-    if cookies:
-        opener = request.build_opener(request.HTTPCookieProcessor(cookies))
-        request.install_opener(opener)
-
-    response = request.urlopen(url)
-
-    data = response.read()
-    if response.info().get('Content-Encoding') == 'gzip':
-        data = ungzip(data)
-    elif response.info().get('Content-Encoding') == 'deflate':
-        data = undeflate(data)
-    response.data = data
-    return response
-
-# DEPRECATED in favor of get_content()
-def get_html(url, encoding = None):
-    content = get_response(url).data
-    return str(content, 'utf-8', 'ignore')
-
 def get_location(url):
     logging.debug('get_location: %s' % url)
 

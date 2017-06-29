@@ -316,7 +316,7 @@ def constructKey(arg):
 
 
 def pptv_download_by_id(id, title = None, output_dir = '.', merge = True, info_only = False):
-    xml = get_html('http://web-play.pptv.com/webplay3-0-%s.xml?type=web.fpp' % id)
+    xml = get_content('http://web-play.pptv.com/webplay3-0-%s.xml?type=web.fpp' % id)
     #vt=3 means vod mode vt=5 means live mode
     host = r1(r'<sh>([^<>]+)</sh>', xml)
     k = r1(r'<key expire=[^<>]+>([^<>]+)</key>', xml)
@@ -347,7 +347,7 @@ def pptv_download_by_id(id, title = None, output_dir = '.', merge = True, info_o
 
 def pptv_download(url, output_dir = '.', merge = True, info_only = False, **kwargs):
     assert re.match(r'http://v.pptv.com/show/(\w+)\.html', url)
-    html = get_html(url)
+    html = get_content(url)
     id = r1(r'webcfg\s*=\s*{"id":\s*(\d+)', html)
     assert id
     pptv_download_by_id(id, output_dir = output_dir, merge = merge, info_only = info_only)

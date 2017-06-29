@@ -8,7 +8,7 @@ import json
 import re
 
 def ku6_download_by_id(id, title = None, output_dir = '.', merge = True, info_only = False):
-    data = json.loads(get_html('http://v.ku6.com/fetchVideo4Player/%s...html' % id))['data']
+    data = json.loads(get_content('http://v.ku6.com/fetchVideo4Player/%s...html' % id))['data']
     t = data['t']
     f = data['f']
     title = title or t
@@ -41,11 +41,11 @@ def ku6_download(url, output_dir = '.', merge = True, info_only = False, **kwarg
 def baidu_ku6(url):
     id = None
 
-    h1 = get_html(url)
+    h1 = get_content(url)
     isrc = match1(h1, r'<iframe id="innerFrame" src="([^"]*)"')
 
     if isrc is not None:
-        h2 = get_html(isrc)
+        h2 = get_content(isrc)
         id = match1(h2, r'http://v.ku6.com/show/(.*)\.\.\.html')
 #fix #1746
 #some ku6 urls really ends with three dots? A bug?

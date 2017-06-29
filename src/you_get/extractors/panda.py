@@ -9,7 +9,7 @@ import time
 def panda_download(url, output_dir = '.', merge = True, info_only = False, **kwargs):
     roomid = url[url.rfind('/')+1:]
     json_request_url ="http://www.panda.tv/api_room_v2?roomid={}&__plat=pc_web&_={}".format(roomid, int(time.time()))
-    content = get_html(json_request_url)
+    content = get_content(json_request_url)
     api_json = json.loads(content)
     
     errno = api_json["errno"]

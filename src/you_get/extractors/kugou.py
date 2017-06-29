@@ -11,7 +11,7 @@ import hashlib
 def kugou_download(url, output_dir=".", merge=True, info_only=False, **kwargs):
     if url.lower().find("5sing")!=-1:
         #for 5sing.kugou.com
-        html=get_html(url)
+        html=get_content(url)
         ticket=r1(r'"ticket":\s*"(.*)"',html)
         j=loads(str(b64decode(ticket),encoding="utf-8"))
         url=j['file']
@@ -31,7 +31,7 @@ def kugou_download_by_hash(title,hash_val,output_dir = '.', merge = True, info_o
     #hash ->key  md5(hash+kgcloud")->key  decompile swf
     #cmd 4 for mp3 cmd 3 for m4a
     key=hashlib.new('md5',(hash_val+"kgcloud").encode("utf-8")).hexdigest()
-    html=get_html("http://trackercdn.kugou.com/i/?pid=6&key=%s&acceptMp3=1&cmd=4&hash=%s"%(key,hash_val))
+    html=get_content("http://trackercdn.kugou.com/i/?pid=6&key=%s&acceptMp3=1&cmd=4&hash=%s"%(key,hash_val))
     j=loads(html)
     url=j['url']
     songtype, ext, size = url_info(url)
@@ -40,7 +40,7 @@ def kugou_download_by_hash(title,hash_val,output_dir = '.', merge = True, info_o
         download_urls([url], title, ext, size, output_dir, merge=merge)
 
 def kugou_download_playlist(url, output_dir = '.', merge = True, info_only = False, **kwargs):
-    html=get_html(url)
+    html=get_content(url)
     pattern=re.compile('title="(.*?)".* data="(\w*)\|.*?"')
     pairs=pattern.findall(html)
     for title,hash_val in pairs:

@@ -5,7 +5,7 @@ __all__ = ['heavymusic_download']
 from ..common import *
 
 def heavymusic_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
     tracks = re.findall(r'href="(online2\.php[^"]+)"', html)
     for track in tracks:
         band = r1(r'band=([^&]*)', track)

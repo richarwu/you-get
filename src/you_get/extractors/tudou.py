@@ -13,7 +13,7 @@ def tudou_download_by_iid(iid, title, output_dir = '.', merge = True, info_only 
 
     urls = []
     for vid in vids:
-        for i in parseString(get_html('http://ct.v2.tudou.com/f?id=%s' % vid)).getElementsByTagName('f'):
+        for i in parseString(get_content('http://ct.v2.tudou.com/f?id=%s' % vid)).getElementsByTagName('f'):
             urls.append(i.firstChild.nodeValue.strip())
 
     ext = r1(r'http://[\w.]*/(\w+)/[\w.]*', urls[0])
@@ -23,7 +23,7 @@ def tudou_download_by_iid(iid, title, output_dir = '.', merge = True, info_only 
         download_urls(urls, title, ext, size, output_dir=output_dir, merge = merge)
 
 def tudou_download_by_id(id, title, output_dir = '.', merge = True, info_only = False):
-    html = get_html('http://www.tudou.com/programs/view/%s/' % id)
+    html = get_content('http://www.tudou.com/programs/view/%s/' % id)
 
     iid = r1(r'iid\s*[:=]\s*(\S+)', html)
     try:
@@ -86,7 +86,7 @@ def parse_playlist(url):
     import json
     #url = 'http://www.tudou.com/playlist/service/getZyAlbumItems.html?aid='+aid
     url = 'http://www.tudou.com/playlist/service/getAlbumItems.html?aid='+aid
-    return [(atitle + '-' + x['title'], str(x['itemId'])) for x in json.loads(get_html(url))['message']]
+    return [(atitle + '-' + x['title'], str(x['itemId'])) for x in json.loads(get_content(url))['message']]
 
 def parse_plist(url):
     html = get_content(url)

@@ -416,7 +416,7 @@ def bilibili_download(url, output_dir='.', merge=True, info_only=False, **kwargs
                 pages = re.findall('<option value=\'([^\']*)\'', html)
                 titles = re.findall('<option value=.*>\s*([^<>]+)\s*</option>', html)
                 for i, page in enumerate(pages):
-                    html = get_html("http://www.bilibili.com%s" % page)
+                    html = get_content("http://www.bilibili.com%s" % page)
                     flashvars = r1_of([r'(cid=\d+)',
                                        r'flashvars="([^"]+)"',
                                        r'"https://[a-z]+\.bilibili\.com/secure,(cid=\d+)(?:&aid=\d+)?"'], html)

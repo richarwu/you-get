@@ -9,7 +9,7 @@ from .sohu import sohu_download
 import json
 
 def w56_download_by_id(id, title = None, output_dir = '.', merge = True, info_only = False):
-    content = json.loads(get_html('http://vxml.56.com/json/%s/?src=site' % id))
+    content = json.loads(get_content('http://vxml.56.com/json/%s/?src=site' % id))
     info = content['info']
     title = title or info['Subject']
     assert title

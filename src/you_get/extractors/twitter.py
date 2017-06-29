@@ -13,7 +13,7 @@ def extract_m3u(source):
     return ['https://video.twimg.com%s' % i for i in s2]
 
 def twitter_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
+    html = get_content(url)
     screen_name = r1(r'data-screen-name="([^"]*)"', html) or \
         r1(r'<meta name="twitter:title" content="([^"]*)"', html)
     item_id = r1(r'data-item-id="([^"]*)"', html) or \

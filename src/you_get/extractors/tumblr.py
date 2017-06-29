@@ -13,7 +13,7 @@ def tumblr_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
         universal_download(url, output_dir, merge=merge, info_only=info_only)
         return
 
-    html = parse.unquote(get_html(url)).replace('\/', '/')
+    html = parse.unquote(get_content(url)).replace('\/', '/')
     feed = r1(r'<meta property="og:type" content="tumblr-feed:(\w+)" />', html)
 
     if feed in ['photo', 'photoset', 'entry'] or feed is None:
