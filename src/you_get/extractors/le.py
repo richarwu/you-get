@@ -4,32 +4,23 @@ __all__ = ['letv_download', 'letvcloud_download', 'letvcloud_download_by_vu']
 
 import json
 import random
+import urllib.parse
 import xml.etree.ElementTree as ET
 import base64, hashlib, urllib, time, re
 
 from ..common import *
 
-#@DEPRECATED
-def get_timestamp():
-    tn = random.random()
-    url = 'http://api.letv.com/time?tn={}'.format(tn)
-    result = get_content(url)
-    return json.loads(result)['stime']
-#@DEPRECATED
-def get_key(t):
-    for s in range(0, 8):
-        e = 1 & t
-        t >>= 1
-        e <<= 31
-        t += e
-    return t ^ 185025305
+def r_shuffle(val, shift):
+    shift &= 31
+    less_sig = (val & 0xffffffff) >> shift
+    more_sig = (val << (32 - shift)) & 0xffffffff
+    return less_sig | more_sig
 
-def calcTimeKey(t):
-    ror = lambda val, r_bits, : ((val & (2**32-1)) >> r_bits%32) |  (val << (32-(r_bits%32)) & (2**32-1))
+def tkey(t=None):
+    if not t:
+        t = int(time.time())
     magic = 185025305
-    return ror(t, magic % 17) ^ magic
-    #return ror(ror(t,773625421%13)^773625421,773625421%17)
-
+    return r_shuffle(t, magic % 17) ^ magic
 
 def decode(data):
     version = data[0:5]
@@ -50,46 +41,60 @@ def decode(data):
         # directly return
         return data
 
+def create_guid():
+    ran = str(random.randint(0, 0xffffffff)).encode('utf8')
+    return hashlib.md5(ran).hexdigest()
 
+def video_info(vid, **kwargs):
+    flash = False
+    flash_params = dict(platid=1, splatid=101, source=1000)
+    html5_params = dict(platid=3, splatid=304, source=1001)
+    base_url = 'http://player-pc.le.com/mms/out/video/playJson.json?'
+    params = dict(id=vid, devid=create_guid(), tkey=tkey())
+    params_fixed = {'dvtype': 1000, 'domain': 'www.le.com', 'region':'cn', 'accesyx': 1}
 
-
-def video_info(vid,**kwargs):
-    url = 'http://player-pc.le.com/mms/out/video/playJson?id={}&platid=1&splatid=101&format=1&tkey={}&domain=www.le.com&region=cn&source=1000&accesyx=1'.format(vid,calcTimeKey(int(time.time())))
-    r = get_content(url, decoded=False)
-    info=json.loads(str(r,"utf-8"))
-    info = info['msgs']
-
+    params.update(params_fixed)
+    if flash:
+        params.update(flash_params)
+    else:
+        params.update(html5_params)
+    url = base_url + urllib.parse.urlencode(params)
+    info = json.loads(get_content(url))['msgs']
 
     stream_id = None
+    stream_seq = ['1080p', '720p', '1300', '1000', '350']
     support_stream_id = info["playurl"]["dispatch"].keys()
-    if "stream_id" in kwargs and kwargs["stream_id"].lower() in support_stream_id:
-        stream_id = kwargs["stream_id"]
+    if "stream_id" in kwargs:
+        if kwargs["stream_id"].lower() in support_stream_id:
+            stream_id = kwargs["stream_id"]
     else:
         print("Current Video Supports:")
-        for i in support_stream_id:
-            print("\t--format",i,"<URL>")
-        if "1080p" in support_stream_id:
-            stream_id = '1080p'
-        elif "720p" in support_stream_id:
-            stream_id = '720p'
-        else:
-            stream_id =sorted(support_stream_id,key= lambda i: int(i[1:]))[-1]
-    url =info["playurl"]["domain"][0]+info["playurl"]["dispatch"][stream_id][0]
-    uuid = hashlib.sha1(url.encode('utf8')).hexdigest() + '_0'
+        for stream in stream_seq:
+            if stream in support_stream_id:
+                print("\t--format {:>5} <URL>".format(stream))
+                if stream_id is None:
+                    stream_id = stream
+
+    host = info['playurl']['domain'][0]
+    path = info['playurl']['dispatch'][stream_id][0]
+    url = host + path
+    uuid = hashlib.sha1(url.encode('utf8')).hexdigest().upper() + '_0'
     ext = info["playurl"]["dispatch"][stream_id][1].split('.')[-1]
-    url = url.replace('tss=0', 'tss=ios')
-    url+="&m3v=1&termid=1&format=1&hwtype=un&ostype=MacOS10.12.4&p1=1&p2=10&p3=-&expect=3&tn={}&vid={}&uuid={}&sign=letv".format(random.random(), vid, uuid)
 
-    r2=get_content(url,decoded=False)
-    info2=json.loads(str(r2,"utf-8"))
+    if not flash:
+        url = url.replace('tss=0', 'tss=no')
+    else:
+        url = url.replace('tss=0', 'tss=ios')
+    url += "&m3v=1&termid=1&format=1&hwtype=un&ostype=MacOS10.12.4&p1=1&p2=10&p3=-&expect=3&tn={}&vid={}&uuid={}&sign=letv".format(random.random(), vid, uuid)
 
-    # hold on ! more things to do
-    # to decode m3u8 (encoded)
+    info2 = json.loads(get_content(url))
+    if not flash:
+        return ext, [info2['location']], True
     suffix = '&r=' + str(int(time.time() * 1000)) + '&appid=500'
-    m3u8 = get_content(info2["location"]+suffix,decoded=False)
+    m3u8 = get_content(info2["location"] + suffix)
     m3u8_list = decode(m3u8)
-    urls = re.findall(r'^[^#][^\r]*',m3u8_list,re.MULTILINE)
-    return ext,urls
+    urls = re.findall(r'^[^#][^\r]*', m3u8_list, re.MULTILINE)
+    return ext, urls, False
 
 def build_url(segs_list):
     name_patt = r'ver_\d+_\d+_\d+_(\d+)_(\d+)_\d+_\d+_\d+\.ts'
@@ -101,10 +106,13 @@ def build_url(segs_list):
     fn = '_'.join(first_fn)
     return re.sub(name_patt, fn, segs_list[0])
 
-def letv_download_by_vid(vid,title, output_dir='.', merge=True, info_only=False,**kwargs):
-    ext , urls = video_info(vid,**kwargs)
-    url = build_url(urls)
-    _, _, size = url_info(url)
+def letv_download_by_vid(vid,title, output_dir='.', merge=True, info_only=False, **kwargs):
+    ext, urls, is_mp4 = video_info(vid, **kwargs)
+    if not is_mp4:
+        url = build_url(urls)
+    else:
+        url = urls[0]
+    size = urls_size([url])
     print_info(site_info, title, ext, size)
     if not info_only:
         download_urls(urls, title, ext, size, output_dir=output_dir, merge=merge)
