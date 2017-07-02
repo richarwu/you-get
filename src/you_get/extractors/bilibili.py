@@ -108,6 +108,14 @@ class Bilibili(VideoExtractor):
     def prepare(self, **kwargs):
         self.ua = fake_headers['User-Agent']
         self.url = url_locations([self.url])[0]
+        frag = urllib.parse.urlparse(self.url).fragment
+#http://www.bilibili.com/video/av3141144/index_2.html#page=3
+        if frag:
+            hit = re.search(r'page=(\d+)', frag)
+            if hit is not None:
+                page = hit.group(1)
+                aid = re.search(r'av(\d+)', self.url).group(1)
+                self.url = 'http://www.bilibili.com/video/av{}/index_{}.html'.format(aid, page)
         self.referer = self.url
         self.page = get_content(self.url)
         self.title = first_hit([r'<h1\s*title='+dqt_patt], self.page)
