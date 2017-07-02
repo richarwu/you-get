@@ -730,7 +730,7 @@ def get_output_filename(urls, title, ext, output_dir, merge):
 
     from .processor.ffmpeg import has_ffmpeg_installed
     ffmpeg_installed = has_ffmpeg_installed()
-    ffmpeg_mapping = dict(flv='mp4', ts='mkv', f4v='mp4')
+    ffmpeg_mapping = dict(flv='mp4', f4v='mp4')
     py_mapping = dict(f4v='flv')
     merged_ext = None
 
@@ -741,24 +741,6 @@ def get_output_filename(urls, title, ext, output_dir, merge):
             merged_ext = py_mapping.get(ext)
     out_ext = merged_ext if merged_ext else ext
     return '{}.{}'.format(out_fn, out_ext)
-    '''
-    merged_ext = ext
-    if (len(urls) > 1) and merge:
-        from .processor.ffmpeg import has_ffmpeg_installed
-        if ext in ['flv', 'f4v']:
-            if has_ffmpeg_installed():
-                merged_ext = 'mp4'
-            else:
-                merged_ext = 'flv'
-        elif ext == 'mp4':
-            merged_ext = 'mp4'
-        elif ext == 'ts':
-            if has_ffmpeg_installed():
-                merged_ext = 'mkv'
-            else:
-                merged_ext = 'ts'
-    return '%s.%s' % (title, merged_ext)
-    '''
 
 def download_urls(urls, title, ext, total_size, output_dir='.', merge=True, headers={}, **kwargs):
     assert urls
@@ -861,13 +843,8 @@ def download_urls(urls, title, ext, total_size, output_dir='.', merge=True, head
 
         elif ext == "ts":
             try:
-                from .processor.ffmpeg import has_ffmpeg_installed
-                if has_ffmpeg_installed():
-                    from .processor.ffmpeg import ffmpeg_concat_ts_to_mkv
-                    ffmpeg_concat_ts_to_mkv(parts, output_filepath)
-                else:
-                    from .processor.join_ts import concat_ts
-                    concat_ts(parts, output_filepath)
+                from .processor.join_ts import concat_ts
+                concat_ts(parts, output_filepath)
                 print('Merged into %s' % output_filename)
             except:
                 raise
