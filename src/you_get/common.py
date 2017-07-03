@@ -31,7 +31,7 @@ SITES = {
     'icourses'         : 'icourses',
     'ifeng'            : 'ifeng',
     'imgur'            : 'imgur',
-    'in'               : 'alive',
+    'alive'            : 'alive',
     'infoq'            : 'infoq',
     'instagram'        : 'instagram',
     'interest'         : 'interest',
@@ -1348,32 +1348,38 @@ def google_search(url):
     return(videos[0][0])
 
 def url_to_module(url):
-    try:
-        video_host = r1(r'https?://([^/]+)/', url)
-        video_url = r1(r'https?://[^/]+(.*)', url)
-        assert video_host and video_url
-    except:
+    url_seg = parse.urlparse(url)
+    host = url_seg.netloc
+    path = url_seg.path
+    if (not host) or (not path):
+        log.w('failed with {}. Try it with google_search'.format(url))
         url = google_search(url)
-        video_host = r1(r'https?://([^/]+)/', url)
-        video_url = r1(r'https?://[^/]+(.*)', url)
+        url_seg = parse.urlparse(url)
+        host = url_seg.netloc
+        path = url_seg.path
+#tdl part: not trivial
+    domain_name_list = host.split('.')
+#gsld for .cn
+    sld = ['ac', 'com', 'edu', 'gov', 'mil', 'net', 'org']
+    sld_uk = ['co']
+    sld_th = ['in']
 
-    if video_host.endswith('.com.cn') or video_host.endswith('.ac.cn'):
-        video_host = video_host[:-3]
-    domain = r1(r'(\.[^.]+\.[^.]+)$', video_host) or video_host
-    assert domain, 'unsupported url: ' + url
+    sld.extend(sld_uk)
+    sld.extend(sld_th)
 
-    k = r1(r'([^.]+)', domain)
-    if k in SITES:
-        return import_module('.'.join(['you_get', 'extractors', SITES[k]])), url
+    if domain_name_list[-2] in sld_th:
+        site_name = domain_name_list[-3]
     else:
-        import http.client
-        conn = http.client.HTTPConnection(video_host)
-        conn.request("HEAD", video_url, headers=fake_headers)
-        res = conn.getresponse()
-        location = res.getheader('location')
+        site_name = domain_name_list[-2]
+
+    if site_name in SITES:
+        return import_module('.'.join(['you_get', 'extractors', SITES[site_name]])), url
+    else:
+        location = url_locations([url])[0]
         if location and location != url and not location.startswith('/'):
             return url_to_module(location)
         else:
+            log.w('Unsupported site. Try it with universal')
             return import_module('you_get.extractors.universal'), url
 
 def any_download(url, **kwargs):
