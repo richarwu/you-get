@@ -247,10 +247,11 @@ def sign_bangumi(cid, ts = None):
 
 def collect_bangumi_epids(json_data):
     eps = json_data['result']['episodes']
+    eps = sorted(eps, key=lambda item: int(item['index']))
     result = []
     for ep in eps:
         result.append(ep['episode_id'])
-    return sorted(result)
+    return result
 
 def get_bangumi_info(bangumi_id):
     BASE_URL = 'http://bangumi.bilibili.com/jsonp/seasoninfo/'
